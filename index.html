@@ -51,7 +51,8 @@ function appendMessage(text, align) {
 async function sendMessage() {
   const msg = input.value.trim();
   if (!msg) return;
-  appendMessage(msg, "right");
+  
+  appendMessage(msg, "right"); // mostrar mensaje del usuario
   input.value = "";
 
   try {
@@ -60,9 +61,24 @@ async function sendMessage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: msg, sessionId })
     });
+
+    // Intentar parsear JSON
     const data = await res.json();
-    appendMessage(data.reply|| "No recibí respuesta 😕", "left");
+
+    // Normalizar respuesta: puede venir en 'reply', o en array de items
+    let reply = "No recibí respuesta 😕";
+    
+    if (data) {
+      if (Array.isArray(data)) {
+        reply = data[0]?.json?.reply || reply;
+      } else if (data.reply) {
+        reply = data.reply;
+      }
+    }
+
+    appendMessage(reply, "left");
   } catch (err) {
+    console.error("Error al enviar mensaje:", err);
     appendMessage("⚠️ Error al conectar con el asistente.", "left");
   }
 }
