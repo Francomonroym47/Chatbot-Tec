@@ -4,99 +4,85 @@
 <meta charset="UTF-8">
 <title>TEC_ROBOT_BETA</title>
 <style>
-body { 
-  font-family: 'Segoe UI', Arial, sans-serif; 
-  margin: 0; 
-  background: transparent; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  height: 100vh; 
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  margin: 0;
+  background: transparent;
 }
 
+/* Ventana del chat centrada */
 #chat-container {
-  width: 350px; 
-  height: 480px; 
-  background: white; 
-  border-radius: 12px; 
-  box-shadow: 0 5px 20px rgba(0,0,0,0.25); 
-  display: flex; 
-  flex-direction: column; 
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 360px;
+  height: 500px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-#chat-header { 
-  background: #0078d4; 
-  color: white; 
-  padding: 12px; 
-  font-weight: bold; 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+#chat-header {
+  background: #0078d4;
+  color: white;
+  padding: 12px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-#chat-header button { 
-  background: transparent; 
-  border: none; 
-  color: white; 
-  font-size: 18px; 
-  cursor: pointer; 
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  font-size: 14px;
 }
 
-#chat-messages { 
-  flex: 1; 
-  overflow-y: auto; 
-  padding: 10px; 
-  font-size: 14px; 
-  scroll-behavior: smooth; 
+#chat-input {
+  display: flex;
+  border-top: 1px solid #ddd;
 }
 
-#chat-input { 
-  display: flex; 
-  border-top: 1px solid #ddd; 
+#chat-input input {
+  flex: 1;
+  border: none;
+  padding: 10px;
+  font-size: 14px;
 }
 
-#chat-input input { 
-  flex: 1; 
-  border: none; 
-  padding: 10px; 
-  font-size: 14px; 
+#chat-input button {
+  background: #0078d4;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
 }
 
-#chat-input button { 
-  background: #0078d4; 
-  color: white; 
-  border: none; 
-  padding: 10px 14px; 
-  cursor: pointer; 
-}
-
-.bubble { 
-  margin: 6px 0; 
-  max-width: 80%; 
-  word-wrap: break-word; 
+.bubble {
+  margin: 6px 0;
+  max-width: 80%;
+  word-wrap: break-word;
 }
 
 .right { text-align: right; }
-.right span { 
-  background: #0078d4; 
-  color: white; 
-  border-radius: 10px; 
-  padding: 8px 10px; 
-  display: inline-block; 
+.right span {
+  background: #0078d4;
+  color: white;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: inline-block;
 }
-
-.left span { 
-  background: #f1f1f1; 
-  color: black; 
-  border-radius: 10px; 
-  padding: 8px 10px; 
-  display: inline-block; 
-}
-
-.typing { 
-  font-style: italic; 
-  color: #666; 
+.left span {
+  background: #f1f1f1;
+  color: black;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: inline-block;
 }
 </style>
 </head>
@@ -105,85 +91,56 @@ body {
 <div id="chat-container">
   <div id="chat-header">
     <span>🤖 TEC_ROBOT_BETA</span>
-    <button id="close-chat">✖</button>
   </div>
   <div id="chat-messages"></div>
   <div id="chat-input">
-    <input id="user-input" type="text" placeholder="Escribe tu mensaje..."/>
+    <input id="user-input" type="text" placeholder="Escribe tu mensaje..." />
     <button id="send-btn">Enviar</button>
   </div>
 </div>
 
 <script>
-const webhookUrl = "proxy.php";
-const sessionId = localStorage.getItem("tecrobot_session") || crypto.randomUUID();
-localStorage.setItem("tecrobot_session", sessionId);
-
-const closeChat = document.getElementById("close-chat");
-const chatBox = document.getElementById("chat-messages");
-const input = document.getElementById("user-input");
-const btn = document.getElementById("send-btn");
-
-closeChat.onclick = () => document.getElementById("chat-container").style.display = "none";
-
-function appendMessage(text, align, typing=false) {
-  const div = document.createElement("div");
-  div.className = "bubble " + align;
-  div.innerHTML = `<span${typing ? ' class="typing"' : ''}>${text}</span>`;
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-  return div;
-}
-
 async function sendMessage() {
+  const input = document.getElementById("user-input");
+  const chatBox = document.getElementById("chat-messages");
   const msg = input.value.trim();
   if (!msg) return;
+
   appendMessage(msg, "right");
   input.value = "";
 
-  const typingBubble = appendMessage("Escribiendo...", "left", true);
-
   try {
-    const res = await fetch(webhookUrl, {
+    const res = await fetch("chatproxy.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg, sessionId })
+      body: JSON.stringify({ message: msg })
     });
+    const data = await res.json();
 
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error("Error parseando JSON:", text);
-      chatBox.removeChild(typingBubble);
-      appendMessage("⚠️ Respuesta inválida del servidor", "left");
-      return;
-    }
-
-    console.log("dataview:", data);
-
-    chatBox.removeChild(typingBubble);
-
-    if (Array.isArray(data)) {
-      data.forEach(item => {
-        const reply = item?.reply || "No recibí respuesta 😕";
-        appendMessage(reply, "left");
-      });
+    if (data.reply) {
+      appendMessage(data.reply, "left");
     } else {
-      const reply = data?.reply || "No recibí respuesta 😕";
-      appendMessage(reply, "left");
+      appendMessage("⚠️ Respuesta inválida del servidor.", "left");
     }
-
   } catch (err) {
-    chatBox.removeChild(typingBubble);
-    appendMessage("⚠️ Error al conectar con el asistente.", "left");
-    console.error(err);
+    appendMessage("⚠️ Error al conectar con el servidor.", "left");
   }
 }
 
-btn.onclick = sendMessage;
-input.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
+function appendMessage(text, align) {
+  const chatBox = document.getElementById("chat-messages");
+  const div = document.createElement("div");
+  div.className = "bubble " + align;
+  div.innerHTML = `<span>${text}</span>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("user-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") sendMessage();
+});
 </script>
+
 </body>
 </html>
