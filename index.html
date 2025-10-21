@@ -61,7 +61,7 @@ async function sendMessage() {
       body: JSON.stringify({ message: msg, sessionId })
     });
     const data = await res.json();
-    appendMessage(data.output || "No recibí respuesta 😕", "left");
+    appendMessage(data.reply|| "No recibí respuesta 😕", "left");
   } catch (err) {
     appendMessage("⚠️ Error al conectar con el asistente.", "left");
   }
