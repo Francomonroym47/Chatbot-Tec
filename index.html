@@ -167,11 +167,11 @@ async function sendMessage() {
 
     if (Array.isArray(data)) {
       data.forEach(item => {
-        const reply = item?.json?.reply || item?.json?.output || "No recibí respuesta 😕";
+        const reply = item?.reply || "No recibí respuesta 😕";
         appendMessage(reply, "left");
       });
     } else {
-      const reply = data?.reply || data?.output || "No recibí respuesta 😕";
+      const reply = data?.reply || "No recibí respuesta 😕";
       appendMessage(reply, "left");
     }
 
