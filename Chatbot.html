@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TEC_ROBOT_BETA</title>
+<style>
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #f9f9f9; }
+#chat-box {
+  width: 340px; background: #fff; border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  overflow: hidden; margin: 20px auto; border: 1px solid #ddd;
+}
+#chat-header { background: #0078d4; color: white; padding: 12px; font-weight: bold; }
+#chat-messages { height: 340px; overflow-y: auto; padding: 10px; font-size: 14px; }
+#chat-input { display: flex; border-top: 1px solid #ddd; }
+#chat-input input { flex: 1; border: none; padding: 10px; font-size: 14px; }
+#chat-input button { background: #0078d4; color: white; border: none; padding: 10px 14px; cursor: pointer; }
+.bubble { margin: 6px 0; max-width: 80%; word-wrap: break-word; }
+.right { text-align: right; }
+.right span { background: #0078d4; color: white; border-radius: 10px; padding: 8px 10px; display: inline-block; }
+.left span { background: #f1f1f1; color: black; border-radius: 10px; padding: 8px 10px; display: inline-block; }
+</style>
+</head>
+<body>
+<div id="chat-box">
+  <div id="chat-header">🤖 TEC_ROBOT_BETA</div>
+  <div id="chat-messages"></div>
+  <div id="chat-input">
+    <input id="user-input" type="text" placeholder="Escribe tu mensaje..."/>
+    <button id="send-btn">Enviar</button>
+  </div>
+</div>
+
+<script>
+const webhookUrl = "https://franciscomonroy.app.n8n.cloud/webhook/4b90adba-3085-4032-b656-46017b6defd4";
+const sessionId = localStorage.getItem("tecrobot_session") || crypto.randomUUID();
+localStorage.setItem("tecrobot_session", sessionId);
+
+const chatBox = document.getElementById("chat-messages");
+const input = document.getElementById("user-input");
+const btn = document.getElementById("send-btn");
+
+function appendMessage(text, align) {
+  const div = document.createElement("div");
+  div.className = "bubble " + align;
+  div.innerHTML = `<span>${text}</span>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage() {
+  const msg = input.value.trim();
+  if (!msg) return;
+  appendMessage(msg, "right");
+  input.value = "";
+
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, sessionId })
+    });
+    const data = await res.json();
+    appendMessage(data.reply || "No recibí respuesta 😕", "left");
+  } catch (err) {
+    appendMessage("⚠️ Error al conectar con el asistente.", "left");
+  }
+}
+
+btn.onclick = sendMessage;
+input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+</script>
+</body>
+</html>
