@@ -4,7 +4,7 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
-$url = "https://franciscomonroy.app.n8n.cloud/webhook/4b90adba-3085-4032-b656-46017b6defd4";
+$url = "https://franciscomonroy.app.n8n.cloud/webhook-test/4b90adba-3085-4032-b656-46017b6defd4";
 
 // Lee el body JSON que viene del front-end
 $input = file_get_contents("php://input");
