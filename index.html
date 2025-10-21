@@ -4,14 +4,12 @@
 <meta charset="UTF-8">
 <title>TEC_ROBOT_BETA</title>
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #f9f9f9; }
-#chat-box {
-  width: 340px; background: #fff; border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-  overflow: hidden; margin: 20px auto; border: 1px solid #ddd;
-}
-#chat-header { background: #0078d4; color: white; padding: 12px; font-weight: bold; }
-#chat-messages { height: 340px; overflow-y: auto; padding: 10px; font-size: 14px; }
+body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: transparent; }
+#chat-button { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 50%; background: #0078d4; color: white; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+#chat-container { position: fixed; bottom: 100px; right: 25px; width: 350px; height: 480px; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.25); display: none; flex-direction: column; overflow: hidden; }
+#chat-header { background: #0078d4; color: white; padding: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+#chat-header button { background: transparent; border: none; color: white; font-size: 18px; cursor: pointer; }
+#chat-messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 14px; scroll-behavior: smooth; }
 #chat-input { display: flex; border-top: 1px solid #ddd; }
 #chat-input input { flex: 1; border: none; padding: 10px; font-size: 14px; }
 #chat-input button { background: #0078d4; color: white; border: none; padding: 10px 14px; cursor: pointer; }
@@ -19,11 +17,18 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f9f9f9; }
 .right { text-align: right; }
 .right span { background: #0078d4; color: white; border-radius: 10px; padding: 8px 10px; display: inline-block; }
 .left span { background: #f1f1f1; color: black; border-radius: 10px; padding: 8px 10px; display: inline-block; }
+.typing { font-style: italic; color: #666; }
 </style>
 </head>
 <body>
-<div id="chat-box">
-  <div id="chat-header">🤖 TEC_ROBOT_BETA</div>
+
+<button id="chat-button">💬</button>
+
+<div id="chat-container">
+  <div id="chat-header">
+    <span>🤖 TEC_ROBOT_BETA</span>
+    <button id="close-chat">✖</button>
+  </div>
   <div id="chat-messages"></div>
   <div id="chat-input">
     <input id="user-input" type="text" placeholder="Escribe tu mensaje..."/>
@@ -32,28 +37,37 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f9f9f9; }
 </div>
 
 <script>
-const webhookUrl = "https://franciscomonroy.app.n8n.cloud/webhook-test/4b90adba-3085-4032-b656-46017b6defd4";
+const webhookUrl = "https://franciscomonroy.app.n8n.cloud/webhook/4b90adba-3085-4032-b656-46017b6defd4";
 const sessionId = localStorage.getItem("tecrobot_session") || crypto.randomUUID();
 localStorage.setItem("tecrobot_session", sessionId);
 
+const chatButton = document.getElementById("chat-button");
+const chatContainer = document.getElementById("chat-container");
+const closeChat = document.getElementById("close-chat");
 const chatBox = document.getElementById("chat-messages");
 const input = document.getElementById("user-input");
 const btn = document.getElementById("send-btn");
 
-function appendMessage(text, align) {
+chatButton.onclick = () => chatContainer.style.display = "flex";
+closeChat.onclick = () => chatContainer.style.display = "none";
+
+function appendMessage(text, align, typing=false) {
   const div = document.createElement("div");
   div.className = "bubble " + align;
-  div.innerHTML = `<span>${text}</span>`;
+  div.innerHTML = `<span${typing ? ' class="typing"' : ''}>${text}</span>`;
   chatBox.appendChild(div);
   chatBox.scrollTop = chatBox.scrollHeight;
+  return div;
 }
 
 async function sendMessage() {
   const msg = input.value.trim();
   if (!msg) return;
-  
-  appendMessage(msg, "right"); // mostrar mensaje del usuario
+  appendMessage(msg, "right");
   input.value = "";
+
+  // Mostrar "escribiendo..." antes de la respuesta
+  const typingBubble = appendMessage("Escribiendo...", "left", true);
 
   try {
     const res = await fetch(webhookUrl, {
@@ -62,29 +76,31 @@ async function sendMessage() {
       body: JSON.stringify({ message: msg, sessionId })
     });
 
-    // Intentar parsear JSON
     const data = await res.json();
 
-    // Normalizar respuesta: puede venir en 'reply', o en array de items
-    let reply = "No recibí respuesta 😕";
-    
-    if (data) {
-      if (Array.isArray(data)) {
-        reply = data[0]?.json?.reply || reply;
-      } else if (data.reply) {
-        reply = data.reply;
-      }
+    // Quitar el "escribiendo..." del chat
+    chatBox.removeChild(typingBubble);
+
+    // Manejar múltiples respuestas
+    if (Array.isArray(data)) {
+      data.forEach(item => {
+        const reply = item?.json?.reply || "No recibí respuesta 😕";
+        appendMessage(reply, "left");
+      });
+    } else {
+      const reply = data?.reply || "No recibí respuesta 😕";
+      appendMessage(reply, "left");
     }
 
-    appendMessage(reply, "left");
   } catch (err) {
-    console.error("Error al enviar mensaje:", err);
+    chatBox.removeChild(typingBubble);
     appendMessage("⚠️ Error al conectar con el asistente.", "left");
+    console.error(err);
   }
 }
 
 btn.onclick = sendMessage;
-input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+input.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); });
 </script>
 </body>
 </html>
