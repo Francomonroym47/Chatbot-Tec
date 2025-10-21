@@ -23,7 +23,7 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
 $response = curl_exec($ch);
 curl_close($ch);
-
+file_put_contents("debug_response.txt", $response); // Guarda el resultado crudo
 $json = json_decode($response, true);
 
 if (isset($json[0]["reply"])) {
@@ -33,5 +33,6 @@ if (isset($json[0]["reply"])) {
 } else {
   echo json_encode(["reply" => "⚠️ Respuesta inválida del servidor."]);
 }
+
 ?>
 
