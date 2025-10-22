@@ -155,17 +155,17 @@
           if (data.reply) {
             addMessage(data.reply, "bot");
           } else {
-            addMessage("⚠️ Respuesta inválida del servidor.", "bot");
+            addMessage("No page found", "bot");
           }
         } catch (err) {
           console.error("Error al parsear JSON:", err, text);
-          addMessage("⚠️ Error al procesar la respuesta del servidor.", "bot");
+          addMessage("Error de procesamiento en el index", "bot");
         }
 
       } catch (error) {
         hideLoading();
         console.error("Error de conexión:", error);
-        addMessage("⚠️ No se pudo conectar con el servidor.", "bot");
+        addMessage("No se conecto en el index", "bot");
       }
     }
 
