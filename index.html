@@ -221,19 +221,18 @@
                     throw new Error(`Error HTTP: ${response.status}`);
                 }
 
-                const data = await response.json();
-                
-                hideTypingIndicator();
-                
-                // Procesar la respuesta - asumiendo que n8n devuelve { reply: "texto" }
-                let reply = data.reply || "No recibí respuesta 😕";
-                
-                // Si la respuesta es un array, tomar el primer elemento
-                if (Array.isArray(reply)) {
-                    reply = reply[0] || "No recibí respuesta 😕";
-                }
-                
-                addMessage(reply);
+ const data = await response.json();
+console.log('Respuesta completa:', data);
+
+let reply = data.reply || "No recibí respuesta 😕";
+
+// Mostrar información de debug
+if (data.debug) {
+  console.log('Debug info:', data.debug);
+  reply += " | Debug: " + JSON.stringify(data.debug).substring(0, 100);
+}
+
+addMessage(reply);
 
             } catch (error) {
                 console.error('Error:', error);
