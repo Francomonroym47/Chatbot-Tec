@@ -236,9 +236,6 @@ if (data.debug) {
   console.log('Debug info:', data.debug);
   reply += " | Debug: " + JSON.stringify(data.debug).substring(0, 100);
 }
-
-addMessage(reply);
-
             } catch (error) {
                 console.error('Error:', error);
                 hideTypingIndicator();
