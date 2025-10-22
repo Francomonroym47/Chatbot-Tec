@@ -19,7 +19,7 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
   "Content-Type: application/json",
   "Accept: application/json",
-  "Accept-Encoding: identity" // 👈 fuerza texto plano
+  "Accept-Encoding: identity"
 ]);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
@@ -28,21 +28,23 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $response = curl_exec($ch);
 curl_close($ch);
 
-// Si por alguna razón sigue llegando gzip
+// Si llega comprimido
 if (function_exists('gzdecode') && substr($response, 0, 2) === "\x1f\x8b") {
   $response = gzdecode($response);
 }
 
-// Depuración opcional
+// Limpiar espacios, BOM, saltos
+$response = trim($response, "\xEF\xBB\xBF \t\n\r\0\x0B");
+
 file_put_contents("debug_response.txt", $response);
 
 $json = json_decode($response, true);
 
-if (is_array($json) && isset($json[0]["reply"])) {
-  echo json_encode(["reply" => $json[0]["reply"]]);
-} elseif (isset($json["reply"])) {
+if (isset($json["reply"])) {
   echo json_encode(["reply" => $json["reply"]]);
+} elseif (is_array($json) && isset($json[0]["reply"])) {
+  echo json_encode(["reply" => $json[0]["reply"]]);
 } else {
-  echo json_encode(["reply" => "❌ No proxy o JSON inválido"]);
+  echo json_encode(["reply" => "❌ No se pudo leer JSON desde proxy"]);
 }
 ?>
