@@ -223,8 +223,13 @@
 
  const data = await response.json();
 console.log('Respuesta completa:', data);
-
-let reply = data.reply || "No recibí respuesta 😕";
+console.log('Tipo de dato:', typeof data);
+console.log('Es array?:', Array.isArray(data));
+console.log('Longitud:', data.length);
+console.log('Primer elemento:', data[0]);
+console.log('Propiedad reply:', data[0]?.reply);
+const reply = data[0]?.reply || "No recibí respuesta 😕";
+addMessage(reply);
 
 // Mostrar información de debug
 if (data.debug) {
