@@ -1,178 +1,220 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asistente Virtual</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .chat-container {
-      background: #ffffff;
-      width: 380px;
-      max-width: 90%;
-      height: 600px;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .chat-header {
-      background: #004aad;
-      color: white;
-      padding: 15px;
-      text-align: center;
-      font-weight: bold;
-      font-size: 18px;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: #f9f9f9;
-    }
-
-    .message {
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      max-width: 80%;
-    }
-
-    .user {
-      align-self: flex-end;
-      background: #d1e7ff;
-      padding: 10px 14px;
-      border-radius: 15px 15px 0 15px;
-    }
-
-    .bot {
-      align-self: flex-start;
-      background: #eaeaea;
-      padding: 10px 14px;
-      border-radius: 15px 15px 15px 0;
-    }
-
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ddd;
-    }
-
-    .chat-input input {
-      flex: 1;
-      border: none;
-      padding: 12px;
-      font-size: 15px;
-      outline: none;
-    }
-
-    .chat-input button {
-      background: #004aad;
-      color: white;
-      border: none;
-      padding: 0 18px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .chat-input button:hover {
-      background: #003680;
-    }
-
-    .loading {
-      text-align: center;
-      color: #888;
-      font-size: 14px;
-      margin: 10px 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat con Agente</title>
+    <style>
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 70vh;
+            margin: 0 auto;
+            border: 1px solid #0078d4;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+        }
+        .chat-header {
+            background: #0078d4;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background: #0078d4;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+        .assistant-message {
+            background: #e1e1e1;
+            color: #323130;
+        }
+        .chat-input-container {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #e1e1e1;
+            background: white;
+            border-radius: 0 0 8px 8px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .send-button {
+            padding: 12px 20px;
+            background: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .send-button:disabled {
+            background: #a0a0a0;
+            cursor: not-allowed;
+        }
+        .typing-indicator {
+            padding: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        .timestamp {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
-
-  <div class="chat-container">
-    <div class="chat-header">💬 Asistente Virtual</div>
-    <div id="chatMessages" class="chat-messages"></div>
-    <div class="chat-input">
-      <input type="text" id="userInput" placeholder="Escribe tu mensaje..." />
-      <button id="sendButton">Enviar</button>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3>🤖 Asistente Virtual</h3>
+        </div>
+        <div id="chatMessages" class="chat-messages">
+            <div class="message assistant-message">
+                ¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?
+                <div class="timestamp" id="initialTime"></div>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" id="userInput" class="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button id="sendButton" class="send-button" onclick="sendMessage()">Enviar</button>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const chatMessages = document.getElementById("chatMessages");
-    const userInput = document.getElementById("userInput");
+    <script>
+        // Configuración - ACTUALIZA ESTA URL CON TU WEBHOOK DE N8N
+        const N8N_WEBHOOK_URL = 'https://franciscomonroy.app.n8n.cloud/webhook/sharepoint-chat';
+        
+        // Estado de la conversación
+        let conversationId = null;
+        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        let isWaitingForResponse = false;
 
-    function addMessage(message, sender) {
-      const div = document.createElement("div");
-      div.classList.add("message", sender);
-      div.textContent = message;
-      chatMessages.appendChild(div);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function showLoading() {
-      const loading = document.createElement("div");
-      loading.id = "loading";
-      loading.classList.add("loading");
-      loading.textContent = "⏳ Conectando...";
-      chatMessages.appendChild(loading);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function hideLoading() {
-      const loading = document.getElementById("loading");
-      if (loading) loading.remove();
-    }
-
-    async function sendMessage() {
-      const userMessage = userInput.value.trim();
-      if (!userMessage) return;
-
-      addMessage(userMessage, "user");
-      userInput.value = "";
-      showLoading();
-
-      try {
-        const response = await fetch("/api/chatproxy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: userMessage })
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('initialTime').textContent = new Date().toLocaleTimeString();
+            document.getElementById('userInput').focus();
+            
+            // Enter para enviar
+            document.getElementById('userInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !isWaitingForResponse) {
+                    sendMessage();
+                }
+            });
         });
 
-        hideLoading();
-
-        if (!response.ok) {
-          addMessage("❌ Error de conexión con el servidor.", "bot");
-          return;
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                ${content}
+                <div class="timestamp">${timestamp}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        const data = await response.json();
-        console.log("Respuesta del servidor:", data);
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'typing-indicator';
+            typingDiv.textContent = 'El asistente está escribiendo...';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
 
-        addMessage(data.reply || "😕 No se recibió respuesta.", "bot");
-      } catch (error) {
-        hideLoading();
-        console.error("Error de conexión:", error);
-        addMessage("🚫 No se conectó en el index.", "bot");
-      }
-    }
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) {
+                typingDiv.remove();
+            }
+        }
 
-    document.getElementById("sendButton").addEventListener("click", sendMessage);
-    userInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
-    });
-  </script>
+        async function sendMessage() {
+            if (isWaitingForResponse) return;
+            
+            const input = document.getElementById('userInput');
+            const button = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message) return;
 
+            // Mostrar mensaje del usuario
+            addMessage(message, true);
+            input.value = '';
+            input.disabled = true;
+            button.disabled = true;
+            isWaitingForResponse = true;
+            
+            // Mostrar indicador de typing
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        userId: userId,
+                        conversationId: conversationId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                hideTypingIndicator();
+                
+                if (data.success) {
+                    addMessage(data.response);
+                    conversationId = data.conversationId;
+                } else {
+                    addMessage('⚠️ ' + data.response);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideTypingIndicator();
+                addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
+            } finally {
+                input.disabled = false;
+                button.disabled = false;
+                isWaitingForResponse = false;
+                input.focus();
+            }
+        }
+    </script>
 </body>
 </html>
