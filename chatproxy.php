@@ -34,7 +34,7 @@ curl_close($ch);
 
 // Forzar a texto si llega comprimido o raro
 if ($response === false) {
-  echo json_encode(["reply" => "⚠️ No se pudo contactar al servidor."]);
+  echo json_encode(["reply" => "No proxy conection"]);
   exit;
 }
 
@@ -47,6 +47,6 @@ if (is_array($json) && isset($json[0]["reply"])) {
   echo json_encode(["reply" => $json["reply"]]);
 } else {
   file_put_contents("debug_response.txt", $response);
-  echo json_encode(["reply" => "⚠️ Respuesta inválida del servidor."]);
+  echo json_encode(["reply" => "No proxy"]);
 }
 ?>
