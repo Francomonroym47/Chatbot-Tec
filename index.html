@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat con Agente</title>
     <style>
+        /* (Mantén los mismos estilos que tienes actualmente) */
         .chat-container {
             width: 100%;
             max-width: 600px;
@@ -93,10 +94,7 @@
             <h3>🤖 Asistente Virtual</h3>
         </div>
         <div id="chatMessages" class="chat-messages">
-            <div class="message assistant-message">
-                ¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?
-                <div class="timestamp" id="initialTime"></div>
-            </div>
+            <!-- Los mensajes se cargarán aquí -->
         </div>
         <div class="chat-input-container">
             <input type="text" id="userInput" class="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off">
@@ -105,17 +103,19 @@
     </div>
 
     <script>
-        // Configuración - ACTUALIZA ESTA URL CON TU WEBHOOK DE N8N
+        // Configuración
         const N8N_WEBHOOK_URL = 'https://franciscomonroy.app.n8n.cloud/webhook/4b90adba-3085-4032-b656-46017b6defd4';
         
-        // Estado de la conversación
-        let conversationId = null;
-        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        // Sistema de memoria simple con localStorage
+        const sessionId = localStorage.getItem("chatSession") || crypto.randomUUID();
+        localStorage.setItem("chatSession", sessionId);
+        
+        // Estado
         let isWaitingForResponse = false;
 
         // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('initialTime').textContent = new Date().toLocaleTimeString();
+            loadChatHistory();
             document.getElementById('userInput').focus();
             
             // Enter para enviar
@@ -126,8 +126,32 @@
             });
         });
 
-        function addMessage(content, isUser = false) {
+        function loadChatHistory() {
+            const savedChat = localStorage.getItem(`chatHistory_${sessionId}`);
             const messagesDiv = document.getElementById('chatMessages');
+            
+            if (savedChat) {
+                messagesDiv.innerHTML = savedChat;
+            } else {
+                // Mensaje de bienvenida inicial
+                addMessage('¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?', false, true);
+            }
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function saveChatHistory() {
+            const messagesDiv = document.getElementById('chatMessages');
+            localStorage.setItem(`chatHistory_${sessionId}`, messagesDiv.innerHTML);
+        }
+
+        function addMessage(content, isUser = false, isInitial = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            if (isInitial) {
+                messagesDiv.innerHTML = '';
+            }
+            
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
             
@@ -139,6 +163,9 @@
             
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Guardar en historial
+            saveChatHistory();
         }
 
         function showTypingIndicator() {
@@ -155,6 +182,7 @@
             const typingDiv = document.getElementById('typingIndicator');
             if (typingDiv) {
                 typingDiv.remove();
+                saveChatHistory(); // Actualizar sin el indicador
             }
         }
 
@@ -185,8 +213,7 @@
                     },
                     body: JSON.stringify({
                         message: message,
-                        userId: userId,
-                        conversationId: conversationId
+                        sessionId: sessionId
                     })
                 });
 
@@ -198,12 +225,16 @@
                 
                 hideTypingIndicator();
                 
-                if (data.success) {
-                    addMessage(data.response);
-                    conversationId = data.conversationId;
-                } else {
-                    addMessage('⚠️ ' + data.response);
+                // Procesar la respuesta - asumiendo que n8n devuelve { reply: "texto" }
+                let reply = data.reply || "No recibí respuesta 😕";
+                
+                // Si la respuesta es un array, tomar el primer elemento
+                if (Array.isArray(reply)) {
+                    reply = reply[0] || "No recibí respuesta 😕";
                 }
+                
+                addMessage(reply);
+
             } catch (error) {
                 console.error('Error:', error);
                 hideTypingIndicator();
@@ -215,6 +246,23 @@
                 input.focus();
             }
         }
+
+        // Botón para limpiar historial (opcional)
+        function addClearButton() {
+            const clearBtn = document.createElement('button');
+            clearBtn.textContent = '🔄 Nueva Conversación';
+            clearBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;';
+            clearBtn.onclick = function() {
+                localStorage.removeItem(`chatHistory_${sessionId}`);
+                const newSessionId = crypto.randomUUID();
+                localStorage.setItem("chatSession", newSessionId);
+                location.reload();
+            };
+            document.body.appendChild(clearBtn);
+        }
+
+        // Opcional: agregar botón de limpieza
+        addClearButton();
     </script>
 </body>
 </html>
