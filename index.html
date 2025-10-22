@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat con Agente</title>
     <style>
+        /* (Mantén los mismos estilos que tienes actualmente) */
         .chat-container {
             width: 100%;
             max-width: 600px;
@@ -97,7 +98,7 @@
         </div>
         <div class="chat-input-container">
             <input type="text" id="userInput" class="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off">
-            <button id="sendButton" class="send-button">Enviar</button>
+            <button id="sendButton" class="send-button" onclick="sendMessage()">Enviar</button>
         </div>
     </div>
 
@@ -112,168 +113,156 @@
         // Estado
         let isWaitingForResponse = false;
 
-        // Inicializar - TODO el código dentro de DOMContentLoaded
+        // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
             loadChatHistory();
             document.getElementById('userInput').focus();
             
-            // Event listeners
+            // Enter para enviar
             document.getElementById('userInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter' && !isWaitingForResponse) {
                     sendMessage();
                 }
             });
-
-            document.getElementById('sendButton').addEventListener('click', sendMessage);
-            
-            // Cargar historial del chat
-            function loadChatHistory() {
-                const savedChat = localStorage.getItem(`chatHistory_${sessionId}`);
-                const messagesDiv = document.getElementById('chatMessages');
-                
-                if (savedChat) {
-                    messagesDiv.innerHTML = savedChat;
-                } else {
-                    // Mensaje de bienvenida inicial
-                    addMessage('¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?', false, true);
-                }
-                
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
-
-            function saveChatHistory() {
-                const messagesDiv = document.getElementById('chatMessages');
-                localStorage.setItem(`chatHistory_${sessionId}`, messagesDiv.innerHTML);
-            }
-
-            function addMessage(content, isUser = false, isInitial = false) {
-                const messagesDiv = document.getElementById('chatMessages');
-                
-                if (isInitial) {
-                    messagesDiv.innerHTML = '';
-                }
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
-                
-                const timestamp = new Date().toLocaleTimeString();
-                messageDiv.innerHTML = `
-                    ${content}
-                    <div class="timestamp">${timestamp}</div>
-                `;
-                
-                messagesDiv.appendChild(messageDiv);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                
-                // Guardar en historial
-                saveChatHistory();
-            }
-
-            function showTypingIndicator() {
-                const messagesDiv = document.getElementById('chatMessages');
-                const typingDiv = document.createElement('div');
-                typingDiv.id = 'typingIndicator';
-                typingDiv.className = 'typing-indicator';
-                typingDiv.textContent = 'El asistente está escribiendo...';
-                messagesDiv.appendChild(typingDiv);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }
-
-            function hideTypingIndicator() {
-                const typingDiv = document.getElementById('typingIndicator');
-                if (typingDiv) {
-                    typingDiv.remove();
-                    saveChatHistory(); // Actualizar sin el indicador
-                }
-            }
-
-            // Función sendMessage definida dentro del scope correcto
-            window.sendMessage = async function() {
-                if (isWaitingForResponse) return;
-                
-                const input = document.getElementById('userInput');
-                const button = document.getElementById('sendButton');
-                const message = input.value.trim();
-                
-                if (!message) return;
-
-                // Mostrar mensaje del usuario
-                addMessage(message, true);
-                input.value = '';
-                input.disabled = true;
-                button.disabled = true;
-                isWaitingForResponse = true;
-                
-                // Mostrar indicador de typing
-                showTypingIndicator();
-
-                try {
-                    const response = await fetch(N8N_WEBHOOK_URL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            sessionId: sessionId
-                        })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Error HTTP: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    console.log('Respuesta completa:', data);
-                    
-                    hideTypingIndicator();
-                    
-                    // CORRECCIÓN: La respuesta es un array, tomar el primer elemento
-                    let reply;
-                    if (Array.isArray(data) && data.length > 0) {
-                        reply = data[0].reply || "No recibí respuesta 😕";
-                    } else if (data.reply) {
-                        reply = data.reply;
-                    } else {
-                        reply = "No recibí respuesta 😕";
-                    }
-                    
-                    // Si reply es array, tomar primer elemento
-                    if (Array.isArray(reply)) {
-                        reply = reply[0] || "Respuesta en formato array";
-                    }
-                    
-                    addMessage(reply);
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    hideTypingIndicator();
-                    addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
-                } finally {
-                    input.disabled = false;
-                    button.disabled = false;
-                    isWaitingForResponse = false;
-                    input.focus();
-                }
-            }
-
-            // Botón para limpiar historial (opcional)
-            function addClearButton() {
-                const clearBtn = document.createElement('button');
-                clearBtn.textContent = '🔄 Nueva Conversación';
-                clearBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;';
-                clearBtn.onclick = function() {
-                    localStorage.removeItem(`chatHistory_${sessionId}`);
-                    const newSessionId = crypto.randomUUID();
-                    localStorage.setItem("chatSession", newSessionId);
-                    location.reload();
-                };
-                document.body.appendChild(clearBtn);
-            }
-
-            // Opcional: agregar botón de limpieza
-            addClearButton();
         });
+
+        function loadChatHistory() {
+            const savedChat = localStorage.getItem(`chatHistory_${sessionId}`);
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            if (savedChat) {
+                messagesDiv.innerHTML = savedChat;
+            } else {
+                // Mensaje de bienvenida inicial
+                addMessage('¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?', false, true);
+            }
+            
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function saveChatHistory() {
+            const messagesDiv = document.getElementById('chatMessages');
+            localStorage.setItem(`chatHistory_${sessionId}`, messagesDiv.innerHTML);
+        }
+
+        function addMessage(content, isUser = false, isInitial = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            if (isInitial) {
+                messagesDiv.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            messageDiv.innerHTML = `
+                ${content}
+                <div class="timestamp">${timestamp}</div>
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Guardar en historial
+            saveChatHistory();
+        }
+
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'typing-indicator';
+            typingDiv.textContent = 'El asistente está escribiendo...';
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) {
+                typingDiv.remove();
+                saveChatHistory(); // Actualizar sin el indicador
+            }
+        }
+
+        async function sendMessage() {
+            if (isWaitingForResponse) return;
+            
+            const input = document.getElementById('userInput');
+            const button = document.getElementById('sendButton');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Mostrar mensaje del usuario
+            addMessage(message, true);
+            input.value = '';
+            input.disabled = true;
+            button.disabled = true;
+            isWaitingForResponse = true;
+            
+            // Mostrar indicador de typing
+            showTypingIndicator();
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        sessionId: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                hideTypingIndicator();
+                
+                // Procesar la respuesta - asumiendo que n8n devuelve { reply: "texto" }
+                let reply = data.reply || "No recibí respuesta 😕";
+                
+                // Si la respuesta es un array, tomar el primer elemento
+                if (Array.isArray(reply)) {
+                    reply = reply[0] || "No recibí respuesta 😕";
+                }
+                
+                addMessage(reply);
+
+            } catch (error) {
+                console.error('Error:', error);
+                hideTypingIndicator();
+                addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
+            } finally {
+                input.disabled = false;
+                button.disabled = false;
+                isWaitingForResponse = false;
+                input.focus();
+            }
+        }
+
+        // Botón para limpiar historial (opcional)
+        function addClearButton() {
+            const clearBtn = document.createElement('button');
+            clearBtn.textContent = '🔄 Nueva Conversación';
+            clearBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;';
+            clearBtn.onclick = function() {
+                localStorage.removeItem(`chatHistory_${sessionId}`);
+                const newSessionId = crypto.randomUUID();
+                localStorage.setItem("chatSession", newSessionId);
+                location.reload();
+            };
+            document.body.appendChild(clearBtn);
+        }
+
+        // Opcional: agregar botón de limpieza
+        addClearButton();
     </script>
 </body>
 </html>
