@@ -140,7 +140,7 @@
       showLoading();
 
       try {
-        const response = await fetch("chatproxy.php", {
+        const response = await fetch("https://frankmonroe.lovestoblog.com/chatproxy.php", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message })
