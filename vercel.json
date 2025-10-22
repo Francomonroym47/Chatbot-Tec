@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "api/chatproxy.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/chatproxy", "dest": "/api/chatproxy.js" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
