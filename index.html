@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat con Agente</title>
     <style>
-        /* (Mantén los mismos estilos que tienes actualmente) */
+        /* Estilos */
         .chat-container {
             width: 100%;
             max-width: 600px;
@@ -86,6 +86,11 @@
             opacity: 0.7;
             margin-top: 5px;
         }
+
+        /* ESTILO NUEVO PARA PERMITIR SALTOS Y FORMATO */
+        .content {
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
@@ -93,177 +98,161 @@
         <div class="chat-header">
             <h3>🤖 Asistente Virtual</h3>
         </div>
-        <div id="chatMessages" class="chat-messages">
-            <!-- Los mensajes se cargarán aquí -->
-        </div>
+        <div id="chatMessages" class="chat-messages"></div>
         <div class="chat-input-container">
             <input type="text" id="userInput" class="chat-input" placeholder="Escribe tu mensaje..." autocomplete="off">
             <button id="sendButton" class="send-button" onclick="sendMessage()">Enviar</button>
         </div>
     </div>
 
-    <script>
-        // Configuración
-        const N8N_WEBHOOK_URL = 'https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5';
-        
-        // Sistema de memoria simple con localStorage
-        const sessionId = localStorage.getItem("chatSession") || crypto.randomUUID();
-        localStorage.setItem("chatSession", sessionId);
-        
-        // Estado
-        let isWaitingForResponse = false;
+<script>
+/* CONFIG */
+const N8N_WEBHOOK_URL = 'https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5';
 
-        // Inicializar
-        document.addEventListener('DOMContentLoaded', function() {
-            loadChatHistory();
-            document.getElementById('userInput').focus();
-            
-            // Enter para enviar
-            document.getElementById('userInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !isWaitingForResponse) {
-                    sendMessage();
-                }
-            });
-        });
+/* MEMORIA */
+const sessionId = localStorage.getItem("chatSession") || crypto.randomUUID();
+localStorage.setItem("chatSession", sessionId);
 
-        function loadChatHistory() {
-            const savedChat = localStorage.getItem(`chatHistory_${sessionId}`);
-            const messagesDiv = document.getElementById('chatMessages');
-            
-            if (savedChat) {
-                messagesDiv.innerHTML = savedChat;
-            } else {
-                // Mensaje de bienvenida inicial
-                addMessage('¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?', false, true);
-            }
-            
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+let isWaitingForResponse = false;
+
+/* INICIO */
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+    document.getElementById('userInput').focus();
+
+    document.getElementById('userInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !isWaitingForResponse) {
+            sendMessage();
         }
+    });
+});
 
-        function saveChatHistory() {
-            const messagesDiv = document.getElementById('chatMessages');
-            localStorage.setItem(`chatHistory_${sessionId}`, messagesDiv.innerHTML);
-        }
+/* HISTORIAL */
+function loadChatHistory() {
+    const saved = localStorage.getItem(`chatHistory_${sessionId}`);
+    const messagesDiv = document.getElementById('chatMessages');
 
-        function addMessage(content, isUser = false, isInitial = false) {
-            const messagesDiv = document.getElementById('chatMessages');
-            
-            if (isInitial) {
-                messagesDiv.innerHTML = '';
-            }
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
-            
-            const timestamp = new Date().toLocaleTimeString();
-            messageDiv.innerHTML = `
-                ${content}
-                <div class="timestamp">${timestamp}</div>
-            `;
-            
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            
-            // Guardar en historial
-            saveChatHistory();
-        }
+    if (saved) {
+        messagesDiv.innerHTML = saved;
+    } else {
+        addMessage("¡Hola! Soy tu agente de asistencia. ¿En qué puedo ayudarte hoy?", false, true);
+    }
 
-        function showTypingIndicator() {
-            const messagesDiv = document.getElementById('chatMessages');
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'typing-indicator';
-            typingDiv.textContent = 'El asistente está escribiendo...';
-            messagesDiv.appendChild(typingDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
 
-        function hideTypingIndicator() {
-            const typingDiv = document.getElementById('typingIndicator');
-            if (typingDiv) {
-                typingDiv.remove();
-                saveChatHistory(); // Actualizar sin el indicador
-            }
-        }
+function saveChatHistory() {
+    const messagesDiv = document.getElementById('chatMessages');
+    localStorage.setItem(`chatHistory_${sessionId}`, messagesDiv.innerHTML);
+}
 
+/* FUNCIONES NUEVAS PARA PERMITIR HTML SEGURO */
+function sanitizeHTML(html) {
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
+    return temp.innerHTML;
+}
+
+/* AGREGAR MENSAJE */
+function addMessage(content, isUser = false, isInitial = false) {
+    const messagesDiv = document.getElementById('chatMessages');
+
+    if (isInitial) messagesDiv.innerHTML = "";
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+
+    const timestamp = new Date().toLocaleTimeString();
+
+    messageDiv.innerHTML = `
+        <div class="content">${content}</div>
+        <div class="timestamp">${timestamp}</div>
+    `;
+
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    saveChatHistory();
+}
+
+/* INDICADOR */
+function showTypingIndicator() {
+    const div = document.createElement("div");
+    div.id = "typingIndicator";
+    div.className = "typing-indicator";
+    div.textContent = "El asistente está escribiendo...";
+    document.getElementById('chatMessages').appendChild(div);
+}
+
+function hideTypingIndicator() {
+    const d = document.getElementById('typingIndicator');
+    if (d) d.remove();
+    saveChatHistory();
+}
+
+/* ENVÍO DEL MENSAJE */
 async function sendMessage() {
     if (isWaitingForResponse) return;
-    
+
     const input = document.getElementById('userInput');
     const button = document.getElementById('sendButton');
     const message = input.value.trim();
-    
     if (!message) return;
 
-    // Mostrar mensaje del usuario
     addMessage(message, true);
-    input.value = '';
+    input.value = "";
     input.disabled = true;
     button.disabled = true;
+
     isWaitingForResponse = true;
-    
-    // Mostrar indicador de typing
     showTypingIndicator();
 
     try {
-
-        // Enviar mensaje a n8n
         const response = await fetch(N8N_WEBHOOK_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                message: message,
-                sessionId: sessionId
+                message,
+                sessionId
             })
         });
 
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-        // Leer respuesta
         const data = await response.json();
         console.log("Respuesta completa:", data);
 
-        // Extraer mensaje del asistente
         const msg = data?.[0]?.output || "No recibí respuesta 😕";
 
         hideTypingIndicator();
-        addMessage(msg, false);
-
-        // Debug opcional
-        console.log("Tipo de dato:", typeof data);
-        console.log("Es array?:", Array.isArray(data));
-        console.log("Longitud:", data.length);
-        console.log("Primer elemento:", data[0]);
+        addMessage(sanitizeHTML(msg), false);
 
     } catch (error) {
-        console.error('Error:', error);
+        console.error(error);
         hideTypingIndicator();
-        addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
+        addMessage("❌ Error de conexión. Inténtalo más tarde.", false);
     } finally {
         input.disabled = false;
         button.disabled = false;
-        isWaitingForResponse = false;
         input.focus();
+        isWaitingForResponse = false;
     }
 }
-        // Botón para limpiar historial (opcional)
-        function addClearButton() {
-            const clearBtn = document.createElement('button');
-            clearBtn.textContent = '🔄 Nueva Conversación';
-            clearBtn.style.cssText = 'position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 12px;';
-            clearBtn.onclick = function() {
-                localStorage.removeItem(`chatHistory_${sessionId}`);
-                const newSessionId = crypto.randomUUID();
-                localStorage.setItem("chatSession", newSessionId);
-                location.reload();
-            };
-            document.body.appendChild(clearBtn);
-        }
 
-        // Opcional: agregar botón de limpieza
-        addClearButton();
-    </script>
+/* REINICIAR CONVERSACIÓN */
+function addClearButton() {
+    const clearBtn = document.createElement("button");
+    clearBtn.textContent = "🔄 Nueva Conversación";
+    clearBtn.style.cssText = "position: absolute; top: 10px; right: 10px; padding: 5px 10px;";
+    clearBtn.onclick = function () {
+        localStorage.removeItem(`chatHistory_${sessionId}`);
+        const newId = crypto.randomUUID();
+        localStorage.setItem("chatSession", newId);
+        location.reload();
+    };
+    document.body.appendChild(clearBtn);
+}
+
+addClearButton();
+</script>
 </body>
 </html>
