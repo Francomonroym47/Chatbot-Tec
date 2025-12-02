@@ -205,31 +205,44 @@
             // Mostrar indicador de typing
             showTypingIndicator();
 
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        sessionId: sessionId
-                    })
-                });
+try {
+    // Enviar mensaje a n8n
+    const response = await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            message: message,
+            sessionId: sessionId
+        })
+    });
 
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
+    if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+    }
 
- const data = await response.json();
-console.log('Respuesta completa:', data);
-console.log('Tipo de dato:', typeof data);
-console.log('Es array?:', Array.isArray(data));
-console.log('Longitud:', data.length);
-console.log('Primer elemento:', data[0]);
-console.log('Propiedad reply:', data[0]?.reply);
-const reply = data[0]?.reply || "No recibí respuesta 😕";
-addMessage(reply);
+    // Ahora SÍ podemos leer data
+    const data = await response.json();
+    console.log("Respuesta completa:", data);
+
+    // Extraer mensaje del asistente (n8n envía: [{ output: "..."}])
+    const msg = data?.[0]?.output || "No recibí respuesta 😕";
+
+    // Mostrar mensaje en el chat
+    addMessage(msg, false);  // usa addMessage() que ya tienes
+
+    // Debug opcional
+    console.log('Tipo de dato:', typeof data);
+    console.log('Es array?:', Array.isArray(data));
+    console.log('Longitud:', data.length);
+    console.log('Primer elemento:', data[0]);
+    console.log('Propiedad output:', data[0]?.output);
+
+} catch (error) {
+    console.error("Error:", error);
+    addMessage("❌ Error de conexión con el servidor.", false);
+}
 
 // Mostrar información de debug
 if (data.debug) {
