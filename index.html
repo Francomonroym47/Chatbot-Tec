@@ -186,81 +186,68 @@
             }
         }
 
-        async function sendMessage() {
-            if (isWaitingForResponse) return;
-            
-            const input = document.getElementById('userInput');
-            const button = document.getElementById('sendButton');
-            const message = input.value.trim();
-            
-            if (!message) return;
+async function sendMessage() {
+    if (isWaitingForResponse) return;
+    
+    const input = document.getElementById('userInput');
+    const button = document.getElementById('sendButton');
+    const message = input.value.trim();
+    
+    if (!message) return;
 
-            // Mostrar mensaje del usuario
-            addMessage(message, true);
-            input.value = '';
-            input.disabled = true;
-            button.disabled = true;
-            isWaitingForResponse = true;
-            
-            // Mostrar indicador de typing
-            showTypingIndicator();
+    // Mostrar mensaje del usuario
+    addMessage(message, true);
+    input.value = '';
+    input.disabled = true;
+    button.disabled = true;
+    isWaitingForResponse = true;
+    
+    // Mostrar indicador de typing
+    showTypingIndicator();
 
-try {
-    // Enviar mensaje a n8n
-    const response = await fetch(N8N_WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            message: message,
-            sessionId: sessionId
-        })
-    });
+    try {
 
-    if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+        // Enviar mensaje a n8n
+        const response = await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                sessionId: sessionId
+            })
+        });
+
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+
+        // Leer respuesta
+        const data = await response.json();
+        console.log("Respuesta completa:", data);
+
+        // Extraer mensaje del asistente
+        const msg = data?.[0]?.output || "No recibí respuesta 😕";
+
+        hideTypingIndicator();
+        addMessage(msg, false);
+
+        // Debug opcional
+        console.log("Tipo de dato:", typeof data);
+        console.log("Es array?:", Array.isArray(data));
+        console.log("Longitud:", data.length);
+        console.log("Primer elemento:", data[0]);
+
+    } catch (error) {
+        console.error('Error:', error);
+        hideTypingIndicator();
+        addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
+    } finally {
+        input.disabled = false;
+        button.disabled = false;
+        isWaitingForResponse = false;
+        input.focus();
     }
-
-    // Ahora SÍ podemos leer data
-    const data = await response.json();
-    console.log("Respuesta completa:", data);
-
-    // Extraer mensaje del asistente (n8n envía: [{ output: "..."}])
-    const msg = data?.[0]?.output || "No recibí respuesta 😕";
-
-    // Mostrar mensaje en el chat
-    addMessage(msg, false);  // usa addMessage() que ya tienes
-
-    // Debug opcional
-    console.log('Tipo de dato:', typeof data);
-    console.log('Es array?:', Array.isArray(data));
-    console.log('Longitud:', data.length);
-    console.log('Primer elemento:', data[0]);
-    console.log('Propiedad output:', data[0]?.output);
-
-} catch (error) {
-    console.error("Error:", error);
-    addMessage("❌ Error de conexión con el servidor.", false);
 }
-
-// Mostrar información de debug
-if (data.debug) {
-  console.log('Debug info:', data.debug);
-  reply += " | Debug: " + JSON.stringify(data.debug).substring(0, 100);
-}
-            } catch (error) {
-                console.error('Error:', error);
-                hideTypingIndicator();
-                addMessage('❌ Error de conexión. Por favor, intenta nuevamente.');
-            } finally {
-                input.disabled = false;
-                button.disabled = false;
-                isWaitingForResponse = false;
-                input.focus();
-            }
-        }
-
         // Botón para limpiar historial (opcional)
         function addClearButton() {
             const clearBtn = document.createElement('button');
