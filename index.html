@@ -119,51 +119,127 @@ const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de
 let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
 localStorage.setItem("sessionId", sessionId);
 
-function agregarMensajeBot(texto) {
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = "msg bot";
-    div.innerHTML = texto;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-}
+// Agrega el mensaje inicial automático
+window.onload = () => {
+    agregarMensajeBot(`
+        <b>¡Hola! 👋 Soy tu Asistente Virtual TEC.</b><br>
+        Estoy aquí para ayudarte a resolver cualquier problema técnico o académico.<br><br>
+        Cuéntame, ¿en qué puedo ayudarte hoy?
+    `);
+};
 
-function agregarMensajeUsuario(texto) {
-    const chat = document.getElementById("chat");
-    const div = document.createElement("div");
-    div.className = "msg user";
-    div.textContent = texto;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-}
+// Escucha el botón de enviar
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("userInput").addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+});
 
-async function enviarMensaje() {
-    const input = document.getElementById("messageInput");
-    const msg = input.value.trim();
-    if (!msg) return;
+// ---------------------------------------------------------
+// ENVIO DEL MENSAJE
+// ---------------------------------------------------------
+async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+    if (!message) return;
 
-    agregarMensajeUsuario(msg);
+    agregarMensajeUsuario(message);
     input.value = "";
+
+    mostrarProcesando(true);
 
     try {
         const response = await fetch(N8N_WEBHOOK_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: msg, sessionId })
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                sessionId
+            })
         });
 
-        const data = await response.json();
-        agregarMensajeBot(data.output || "⚠️ No recibí respuesta válida");
+        // Si el servidor NO responde bien
+        if (!response.ok) {
+            mostrarProcesando(false);
+            agregarMensajeBot("Ocurrió un problema al conectar con el servidor ❌.");
+            return;
+        }
 
-    } catch (e) {
-        agregarMensajeBot("⚠️ Error al conectar con el servidor");
+        // ✔ IMPORTANTE: primero parseamos
+        const data = await response.json();
+
+        console.log("Respuesta completa:", data);
+
+        if (!data || !data.output) {
+            mostrarProcesando(false);
+            agregarMensajeBot("No recibí respuesta 😕");
+            return;
+        }
+
+        // Mostramos el mensaje formateado
+        agregarMensajeBot(formatearHTMLSeguro(data.output));
+
+    } catch (error) {
+        console.error("Error:", error);
+        agregarMensajeBot("Error al conectar con el servidor 😕");
     }
+
+    mostrarProcesando(false);
 }
 
-document.getElementById("sendBtn").addEventListener("click", enviarMensaje);
-document.getElementById("messageInput").addEventListener("keypress", e => {
-    if (e.key === "Enter") enviarMensaje();
-});
+// ---------------------------------------------------------
+// MUESTRA EL MENSAJE DEL USUARIO
+// ---------------------------------------------------------
+function agregarMensajeUsuario(msg) {
+    const chat = document.getElementById("chat");
+    const burbuja = document.createElement("div");
+    burbuja.className = "msg user";
+    burbuja.textContent = msg;
+    chat.appendChild(burbuja);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// ---------------------------------------------------------
+// MUESTRA EL MENSAJE DEL BOT (HTML PERMITIDO)
+// ---------------------------------------------------------
+function agregarMensajeBot(msgHTML) {
+    const chat = document.getElementById("chat");
+    const burbuja = document.createElement("div");
+    burbuja.className = "msg bot";
+    burbuja.innerHTML = msgHTML;
+    chat.appendChild(burbuja);
+    chat.scrollTop = chat.scrollHeight;
+}
+
+// ---------------------------------------------------------
+// ANIMACIÓN "Procesando..."
+// ---------------------------------------------------------
+function mostrarProcesando(show) {
+    const loader = document.getElementById("loader");
+    loader.style.display = show ? "block" : "none";
+}
+
+// ---------------------------------------------------------
+// FORMATEO SEGURO (limpia HTML y convierte URLs en links)
+// ---------------------------------------------------------
+function formatearHTMLSeguro(texto) {
+    if (!texto) return "";
+
+    // El backend ya manda HTML limpio, pero por seguridad:
+    texto = texto
+        .replace(/</g, "<")
+        .replace(/>/g, ">");
+
+    // Convierte URLs en links clickeables
+    texto = texto.replace(
+        /(https?:\/\/[^\s<]+)/g,
+        url => `<a href="${url}" target="_blank" style="color:#4DA3FF;text-decoration:underline;">${url}</a>`
+    );
+
+    return texto;
+}
+
 function refrescarChat() {
     const chat = document.getElementById("chat");
     chat.innerHTML = "";
