@@ -181,7 +181,7 @@ async function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
 
-    agregarMensajeUsuario(data.output);
+    agregarMensajeUsuario(message);
     input.value = "";
 
     mostrarProcesando(true);
@@ -252,10 +252,11 @@ function agregarMensajeBot(msgHTML) {
     const chat = document.getElementById("chat");
     const burbuja = document.createElement("div");
     burbuja.className = "msg bot";
-    burbuja.innerHTML = msgHTML;  
+    burbuja.innerHTML = msgHTML;
     chat.appendChild(burbuja);
     chat.scrollTop = chat.scrollHeight;
 }
+
 // ---------------------------------------------------------
 // ANIMACIÓN "Procesando..."
 // ---------------------------------------------------------
@@ -271,11 +272,13 @@ function mostrarProcesando(show) {
 // ---------------------------------------------------------
 function formatearHTMLSeguro(texto) {
     if (!texto) return "";
-    texto = texto
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+    
+    // Convertir URLs en links
+    texto = texto.replace(
+        /(https?:\/\/[^\s<]+)/g,
+        url => `<a href="${url}">${url}</a>`
+    );
+    
     return texto;
 }
 
