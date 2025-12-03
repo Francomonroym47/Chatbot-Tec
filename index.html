@@ -272,22 +272,16 @@ function mostrarProcesando(show) {
 // ---------------------------------------------------------
 function formatearHTMLSeguro(texto) {
     if (!texto) return "";
-
-    // 1) Convertir markdown links: [texto](url)
     texto = texto.replace(
         /\[([^\]]+)\]\((https?:\/\/[^\s()<>]+)\)/g,
-        `<a href="$2" target="_blank" style="color:red;">$1</a>`
+        (m, label, url) => `<a href="${url}" target="_blank" style="color:red;">${label}</a>`
     );
-
-    // 2) Convertir URLs normales en links (las que no están en markdown)
     texto = texto.replace(
-        /(https?:\/\/[^\s<]+)/g,
-        url => `<a style="color:red;" href="${url}" target="_blank">${url}</a>`
+        /(?<!href=")(?<!href=')(https?:\/\/[^\s"'<>]+)/g,
+        (m, url) => `<a href="${url}" target="_blank" style="color:red;">${url}</a>`
     );
-
     return texto;
 }
-
 // ---------------------------------------------------------
 // REFRESCAR CHAT
 // ---------------------------------------------------------
