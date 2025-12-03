@@ -51,6 +51,7 @@
         flex: 1;
         overflow-y: auto;
         padding-right: 10px;
+        margin-bottom: 10px;
     }
 
     .msg {
@@ -59,21 +60,22 @@
         border-radius: 12px;
         max-width: 80%;
         line-height: 1.4;
+        word-wrap: break-word;
     }
 
     .user {
         background: rgba(0, 140, 255, 0.3);
-        align-self: flex-end;
+        margin-left: auto;
+        text-align: right;
     }
 
     .bot {
         background: rgba(255, 255, 255, 0.15);
-        align-self: flex-start;
     }
 
     #inputBox {
         display: flex;
-        margin-top: 10px;
+        margin-top: auto;
     }
 
     #messageInput {
@@ -84,6 +86,7 @@
         outline: none;
         background: rgba(255,255,255,0.1);
         color: white;
+        font-size: 14px;
     }
 
     #sendBtn {
@@ -95,10 +98,37 @@
         border-radius: 10px;
         cursor: pointer;
         transition: 0.2s;
+        font-size: 14px;
     }
 
     #sendBtn:hover {
         background: #0a8bff;
+    }
+
+    #loader {
+        display: none;
+        text-align: center;
+        padding: 10px;
+        color: #aaa;
+        font-style: italic;
+    }
+
+    .loading-dots {
+        display: inline-block;
+    }
+    .loading-dots span {
+        animation: blink 1.4s infinite both;
+        animation-delay: 0.2s;
+    }
+    .loading-dots span:nth-child(2) {
+        animation-delay: 0.4s;
+    }
+    .loading-dots span:nth-child(3) {
+        animation-delay: 0.6s;
+    }
+    @keyframes blink {
+        0%, 80%, 100% { opacity: 0; }
+        40% { opacity: 1; }
     }
 </style>
 </head>
@@ -107,7 +137,14 @@
 <div id="chatContainer">
     <button id="refreshChat">↻</button>
     <div id="chat"></div>
-
+    
+    <!-- Elemento loader que estaba faltando -->
+    <div id="loader">
+        <span class="loading-dots">
+            <span>.</span><span>.</span><span>.</span>
+        </span>
+    </div>
+    
     <div id="inputBox">
         <input id="messageInput" type="text" placeholder="Escribe tu mensaje..." />
         <button id="sendBtn">Enviar</button>
@@ -115,11 +152,11 @@
 </div>
 
 <script>
-cconst N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
+const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
 let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
 localStorage.setItem("sessionId", sessionId);
 
-// Mensaje inicial
+// Mensaje inicial automático
 window.onload = () => {
     agregarMensajeBot(`
         <b>¡Hola! 👋 Soy tu Asistente Virtual TEC.</b><br>
@@ -128,6 +165,13 @@ window.onload = () => {
     `);
 };
 
+// CORRECCIÓN 1: Event listeners corregidos
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("messageInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        sendMessage();
+    }
+});
 
 // ---------------------------------------------------------
 // ENVIO DEL MENSAJE
@@ -143,29 +187,39 @@ async function sendMessage() {
     mostrarProcesando(true);
 
     try {
-        // Petición con manejo de CORS
         const response = await fetch(N8N_WEBHOOK_URL, {
             method: "POST",
-            mode: "cors", // Añadir esto explícitamente
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             },
             body: JSON.stringify({
-                message,
-                sessionId
+                message: message,
+                sessionId: sessionId
             })
         });
 
+        console.log("Respuesta status:", response.status);
+
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`Error HTTP: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Respuesta del servidor:", data);
+        console.log("Respuesta JSON:", data);
 
-        // Ajusta según la estructura real de la respuesta
-        const respuesta = data.output || data.message || "Sin respuesta";
+        // Manejar diferentes estructuras de respuesta
+        let respuesta = "";
+        if (data && data.output) {
+            respuesta = data.output;
+        } else if (data && data.message) {
+            respuesta = data.message;
+        } else if (data && typeof data === 'string') {
+            respuesta = data;
+        } else {
+            respuesta = "Recibí una respuesta sin formato reconocido";
+        }
+
         agregarMensajeBot(formatearHTMLSeguro(respuesta));
 
     } catch (error) {
@@ -207,7 +261,6 @@ function agregarMensajeBot(msgHTML) {
 // ANIMACIÓN "Procesando..."
 // ---------------------------------------------------------
 function mostrarProcesando(show) {
-    // Añade esto en tu HTML: <div id="loader" style="display:none;">Procesando...</div>
     const loader = document.getElementById("loader");
     if (loader) {
         loader.style.display = show ? "block" : "none";
@@ -215,36 +268,35 @@ function mostrarProcesando(show) {
 }
 
 // ---------------------------------------------------------
-// FORMATEO SEGURO (limpia HTML y convierte URLs en links)
+// FORMATEO SEGURO
 // ---------------------------------------------------------
 function formatearHTMLSeguro(texto) {
     if (!texto) return "";
-
-    // El backend ya manda HTML limpio, pero por seguridad:
-    texto = texto
-        .replace(/</g, "<")
-        .replace(/>/g, ">");
-
-    // Convierte URLs en links clickeables
+    
+    // Convertir URLs en links
     texto = texto.replace(
         /(https?:\/\/[^\s<]+)/g,
         url => `<a href="${url}" target="_blank" style="color:#4DA3FF;text-decoration:underline;">${url}</a>`
     );
-
+    
     return texto;
 }
 
+// ---------------------------------------------------------
+// REFRESCAR CHAT
+// ---------------------------------------------------------
 function refrescarChat() {
     const chat = document.getElementById("chat");
     chat.innerHTML = "";
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("sessionId", sessionId);
     agregarMensajeBot("<b>¡Chat reiniciado!</b> 🔄<br>¿En qué puedo ayudarte ahora?");
 }
 
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("messageInput").addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
-});
-    
+document.getElementById("refreshChat").addEventListener("click", refrescarChat);
+
+// CORRECCIÓN: Eliminar la llamada duplicada al final
+// (ya está en window.onload)
 </script>
 </body>
 </html>
