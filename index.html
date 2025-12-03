@@ -271,13 +271,11 @@ function mostrarProcesando(show) {
 // ---------------------------------------------------------
 function formatearHTMLSeguro(texto) {
     if (!texto) return "";
-    
-    // Convertir URLs en links
-    texto = texto.replace(
-        /(https?:\/\/[^\s<]+)/g,
-        url => `<a href="${url}" target="_blank" style="color:#4DA3FF;text-decoration:underline;">${url}</a>`
-    );
-    
+    texto = texto
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     return texto;
 }
 
