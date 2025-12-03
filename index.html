@@ -276,7 +276,7 @@ function formatearHTMLSeguro(texto) {
     // Convertir URLs en links
     texto = texto.replace(
         /(https?:\/\/[^\s<]+)/g,
-        url => `<a href="${url}">${url}</a>`
+        url => `<a style="color: red;" href="${url}">${url}</a>`
     );
     
     return texto;
@@ -294,9 +294,6 @@ function refrescarChat() {
 }
 
 document.getElementById("refreshChat").addEventListener("click", refrescarChat);
-
-// CORRECCIÓN: Eliminar la llamada duplicada al final
-// (ya está en window.onload)
 </script>
 </body>
 </html>
