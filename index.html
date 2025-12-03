@@ -181,7 +181,7 @@ async function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
 
-    agregarMensajeUsuario(message);
+    agregarMensajeUsuario(data.output);
     input.value = "";
 
     mostrarProcesando(true);
@@ -252,11 +252,10 @@ function agregarMensajeBot(msgHTML) {
     const chat = document.getElementById("chat");
     const burbuja = document.createElement("div");
     burbuja.className = "msg bot";
-    burbuja.innerHTML = msgHTML;
+    burbuja.innerHTML = msgHTML;  
     chat.appendChild(burbuja);
     chat.scrollTop = chat.scrollHeight;
 }
-
 // ---------------------------------------------------------
 // ANIMACIÓN "Procesando..."
 // ---------------------------------------------------------
