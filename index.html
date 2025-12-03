@@ -115,11 +115,11 @@
 </div>
 
 <script>
-const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
+cconst N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
 let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
 localStorage.setItem("sessionId", sessionId);
 
-// Agrega el mensaje inicial automático
+// Mensaje inicial
 window.onload = () => {
     agregarMensajeBot(`
         <b>¡Hola! 👋 Soy tu Asistente Virtual TEC.</b><br>
@@ -128,17 +128,12 @@ window.onload = () => {
     `);
 };
 
-// Escucha el botón de enviar
-document.getElementById("sendBtn").addEventListener("click", sendMessage);
-document.getElementById("userInput").addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
-});
 
 // ---------------------------------------------------------
 // ENVIO DEL MENSAJE
 // ---------------------------------------------------------
 async function sendMessage() {
-    const input = document.getElementById("userInput");
+    const input = document.getElementById("messageInput");
     const message = input.value.trim();
     if (!message) return;
 
@@ -148,10 +143,13 @@ async function sendMessage() {
     mostrarProcesando(true);
 
     try {
+        // Petición con manejo de CORS
         const response = await fetch(N8N_WEBHOOK_URL, {
             method: "POST",
+            mode: "cors", // Añadir esto explícitamente
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             },
             body: JSON.stringify({
                 message,
@@ -159,30 +157,23 @@ async function sendMessage() {
             })
         });
 
-        // Si el servidor NO responde bien
         if (!response.ok) {
-            mostrarProcesando(false);
-            agregarMensajeBot("Ocurrió un problema al conectar con el servidor ❌.");
-            return;
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // ✔ IMPORTANTE: primero parseamos
         const data = await response.json();
+        console.log("Respuesta del servidor:", data);
 
-        console.log("Respuesta completa:", data);
-
-        if (!data || !data.output) {
-            mostrarProcesando(false);
-            agregarMensajeBot("No recibí respuesta 😕");
-            return;
-        }
-
-        // Mostramos el mensaje formateado
-        agregarMensajeBot(formatearHTMLSeguro(data.output));
+        // Ajusta según la estructura real de la respuesta
+        const respuesta = data.output || data.message || "Sin respuesta";
+        agregarMensajeBot(formatearHTMLSeguro(respuesta));
 
     } catch (error) {
-        console.error("Error:", error);
-        agregarMensajeBot("Error al conectar con el servidor 😕");
+        console.error("Error completo:", error);
+        agregarMensajeBot(`
+            Error al conectar con el servidor 😕<br>
+            <small>Detalles: ${error.message}</small>
+        `);
     }
 
     mostrarProcesando(false);
@@ -216,8 +207,11 @@ function agregarMensajeBot(msgHTML) {
 // ANIMACIÓN "Procesando..."
 // ---------------------------------------------------------
 function mostrarProcesando(show) {
+    // Añade esto en tu HTML: <div id="loader" style="display:none;">Procesando...</div>
     const loader = document.getElementById("loader");
-    loader.style.display = show ? "block" : "none";
+    if (loader) {
+        loader.style.display = show ? "block" : "none";
+    }
 }
 
 // ---------------------------------------------------------
@@ -245,8 +239,12 @@ function refrescarChat() {
     chat.innerHTML = "";
     agregarMensajeBot("<b>¡Chat reiniciado!</b> 🔄<br>¿En qué puedo ayudarte ahora?");
 }
-document.getElementById("refreshChat").addEventListener("click", refrescarChat);
-agregarMensajeBot("¡Hola! Soy tu asistente virtual especializado 🤖<br>¿En qué puedo ayudarte hoy?");
+
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("messageInput").addEventListener("keypress", e => {
+    if (e.key === "Enter") sendMessage();
+});
+    
 </script>
 </body>
 </html>
