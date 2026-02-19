@@ -347,7 +347,7 @@
         <div class="orb-controls">
             <div class="orb-status" id="orbStatus">En espera</div>
             <button class="listen-btn" id="listenBtn">
-                <span>🎤</span> Escuchar de nuevo
+                <span>🎤</span> Abrir Microfono
             </button>
             <div class="timer-display" id="timerDisplay"></div>
             <div id="voiceSupportMessage" class="unsupported-message"></div>
@@ -377,7 +377,7 @@
             </div>
             
             <div id="inputBox">
-                <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Escuchar de nuevo'..." />
+                <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Abrir Microfono'..." />
                 <button id="sendBtn">Enviar</button>
             </div>
         </div>
@@ -500,7 +500,7 @@ function stopListening() {
     clearInterval(listenTimer);
     clearTimeout(listenTimeout);
     listenBtn.disabled = false;
-    listenBtn.innerHTML = '<span>🎤</span> Escuchar de nuevo';
+    listenBtn.innerHTML = '<span>🎤</span> Abrir Microfono';
     timerDisplay.textContent = '';
 }
 
@@ -534,7 +534,7 @@ function showTimeoutWarning() {
     updateOrbState(ORB_STATES.CONFUSED, 'Tiempo agotado. ¿Quieres intentar de nuevo?');
     const warning = document.createElement('div');
     warning.className = 'timeout-warning';
-    warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Escuchar de nuevo" o escribe tu mensaje.</span>`;
+    warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Abrir Microfono" o escribe tu mensaje.</span>`;
     document.getElementById('chat').appendChild(warning);
     setTimeout(() => warning.remove(), 5000);
 }
@@ -634,11 +634,14 @@ function updateOrbState(state, message = '') {
 // ==================== FUNCIONES DEL CHAT ====================
 function showInitialMessage() {
     setTimeout(() => {
-        agregarMensajeBot(`
-            <b>¡Hola! 👋 Soy tu Orbe TEC.</b><br>
-            Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Escuchar de nuevo" para hablarme.<br><br>
+        const mensajeInicial = `
+            <b>¡Hola! soy tu Orbe TEC.</b><br>
+            Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Abrir Microfono" para hablarme.<br><br>
             ¿En qué puedo ayudarte hoy?
-        `);
+        `;
+        agregarMensajeBot(mensajeInicial);
+        // Reproducir el mensaje inicial con TTS
+        speakText(mensajeInicial);
     }, 500);
 }
 
