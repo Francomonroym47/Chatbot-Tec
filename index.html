@@ -694,15 +694,33 @@ function agregarMensajeUsuario(msg) {
     chat.scrollTop = chat.scrollHeight;
 }
 
-function agregarMensajeBot(msgHTML) {
+ // Convierte URLs y markdown a enlaces HTML clickeables
+function convertirEnlaces(texto) {
+    if (!texto) return "";
+    // 1. Convertir [texto](url) (markdown)
+    texto = texto.replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
+    );
+    // 2. Convertir URLs sueltas (http:// o https://)
+    texto = texto.replace(
+        /\b(https?:\/\/[^\s<]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
+    );   
+    return texto;
+}
+
+function agregarMensajeBot(msg) {
     const chat = document.getElementById("chat");
     const burbuja = document.createElement("div");
     burbuja.className = "msg bot";
-    burbuja.innerHTML = msgHTML;
-    const time = document.createElement("div");
-    time.className = "msg-time";
-    time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    burbuja.appendChild(time);
+    // Si el mensaje ya contiene etiquetas <a>, lo mostramos directamente (viene del backend)
+    // Si no, convertimos los enlaces
+    if (/<a\s/i.test(msg)) {
+        burbuja.innerHTML = msg;
+    } else {
+        burbuja.innerHTML = convertirEnlaces(msg);
+    }
     chat.appendChild(burbuja);
     chat.scrollTop = chat.scrollHeight;
 }
