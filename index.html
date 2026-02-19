@@ -3,41 +3,87 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mi Orbe Tec</title>
+    <title>Mi Orbe TEC</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
+        /* Estilos base (sin cambios drásticos, solo ajustes) */
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+        }
+
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
             color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            padding: 20px;
-        }
-        .app-container {
             display: flex;
-            max-width: 1200px;
-            width: 100%;
-            gap: 30px;
-            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.5s ease;
         }
-        .orb-section {
-            flex: 1;
-            min-width: 300px;
+
+        /* Pantalla inicial: solo el orbe centrado */
+        .initial-screen {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            height: 100vh;
+            cursor: pointer;
+            transition: opacity 0.8s ease;
         }
+
+        .initial-screen .orb-container {
+            width: 400px;
+            height: 400px;
+            margin-bottom: 30px;
+            transform: scale(1);
+            transition: transform 0.3s ease;
+        }
+
+        .initial-screen .orb-container:hover {
+            transform: scale(1.05);
+        }
+
+        .initial-screen .orb-status {
+            font-size: 24px;
+            color: #aaa;
+            text-align: center;
+            animation: pulseText 2s infinite;
+        }
+
+        @keyframes pulseText {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Contenedor principal (oculto inicialmente) */
+        .app-container {
+            display: none;
+            max-width: 1200px;
+            width: 100%;
+            gap: 30px;
+            flex-wrap: wrap;
+            padding: 20px;
+            opacity: 0;
+            animation: fadeIn 0.8s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* Estilos del orbe (igual que antes, pero reutilizables) */
         .orb-container {
             position: relative;
             width: 280px;
             height: 280px;
             margin-bottom: 30px;
         }
+
         .orb {
             width: 100%;
             height: 100%;
@@ -45,6 +91,7 @@
             position: relative;
             transition: all 0.5s ease;
         }
+
         .orb::before {
             content: '';
             position: absolute;
@@ -65,6 +112,7 @@
             opacity: 0.7;
             animation: rotateOrb 20s linear infinite;
         }
+
         .orb-inner {
             position: absolute;
             top: 50%;
@@ -81,6 +129,7 @@
             justify-content: center;
             transition: all 0.3s ease;
         }
+
         .orb-letter {
             font-size: 60px;
             font-weight: 900;
@@ -88,6 +137,7 @@
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
             font-family: 'Arial', sans-serif;
         }
+
         .orb-pulse {
             position: absolute;
             top: 0;
@@ -98,12 +148,15 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             animation: pulse 2s ease-in-out infinite;
         }
+
+        /* Estados del orbe (igual que antes) */
         .orb-state-idle {
             --orb-color-1: #4DA3FF;
             --orb-color-2: #2a5298;
             --orb-color-3: #1e3c72;
             --orb-color-4: #4DA3FF;
         }
+
         .orb-state-listening {
             --orb-color-1: #00ff88;
             --orb-color-2: #00cc6a;
@@ -111,6 +164,7 @@
             --orb-color-4: #00ff88;
             animation: listeningPulse 1.5s ease-in-out infinite !important;
         }
+
         .orb-state-thinking {
             --orb-color-1: #9966ff;
             --orb-color-2: #7b52cc;
@@ -118,6 +172,7 @@
             --orb-color-4: #9966ff;
             animation: thinkingSpin 3s linear infinite !important;
         }
+
         .orb-state-speaking {
             --orb-color-1: #ffcc00;
             --orb-color-2: #ff9900;
@@ -125,6 +180,7 @@
             --orb-color-4: #ffcc00;
             animation: speakingWave 1.2s ease-in-out infinite !important;
         }
+
         .orb-state-confused {
             --orb-color-1: #ff4444;
             --orb-color-2: #cc3636;
@@ -132,6 +188,7 @@
             --orb-color-4: #ff4444;
             animation: confusedShake 0.5s ease-in-out infinite !important;
         }
+
         .orb-state-error {
             --orb-color-1: #ff3366;
             --orb-color-2: #cc2952;
@@ -139,6 +196,8 @@
             --orb-color-4: #ff3366;
             animation: errorFlash 1s ease-in-out infinite !important;
         }
+
+        /* Animaciones */
         @keyframes rotateOrb { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
         @keyframes listeningPulse { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
@@ -147,6 +206,7 @@
         @keyframes confusedShake { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
         @keyframes errorFlash { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
+        /* Resto de estilos del chat (igual que antes) */
         .orb-controls { margin-top: 20px; text-align: center; }
         .orb-status { font-size: 16px; color: #aaa; margin-bottom: 15px; min-height: 24px; }
         .listen-btn {
@@ -165,17 +225,7 @@
             margin: 0 auto;
         }
         .listen-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,136,0.4); }
-        .listen-btn:disabled { 
-            background: #666; 
-            cursor: not-allowed; 
-            transform: none; 
-            box-shadow: none;
-            opacity: 0.5;
-        }
-        .listen-btn.disabled {
-            background: #666;
-            pointer-events: none;
-        }
+        .listen-btn:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
         .timer-display { margin-top: 15px; font-size: 14px; color: #4DA3FF; }
 
         .chat-section { flex: 1; min-width: 400px; display: flex; flex-direction: column; }
@@ -315,463 +365,469 @@
             animation: fadeIn 0.3s ease;
         }
         .timeout-warning span { color: #ff4444; font-size: 14px; }
-        .unsupported-message {
-            font-size: 14px;
-            color: #ffaa00;
-            margin-top: 10px;
-        }
+        .unsupported-message { font-size: 14px; color: #ffaa00; margin-top: 10px; }
+
         @media (max-width: 768px) {
             .app-container { flex-direction: column; }
             .orb-section, .chat-section { min-width: 100%; }
-            .orb-container { width: 200px; height: 200px; }
-            .orb-inner { width: 120px; height: 120px; }
-            .orb-letter { font-size: 40px; }
+            .initial-screen .orb-container { width: 250px; height: 250px; }
         }
     </style>
 </head>
 <body>
-
-<div class="app-container">
-    <!-- SECCIÓN ORBE -->
-    <div class="orb-section">
+    <!-- Pantalla inicial: solo el orbe -->
+    <div id="initialScreen" class="initial-screen">
         <div class="orb-container">
-            <div class="orb orb-state-idle" id="orb">
+            <div class="orb orb-state-idle" id="initialOrb">
                 <div class="orb-inner">
                     <div class="orb-letter">T</div>
                 </div>
                 <div class="orb-pulse"></div>
             </div>
         </div>
-        
-        <div class="orb-controls">
-            <div class="orb-status" id="orbStatus">En espera</div>
-            <button class="listen-btn" id="listenBtn">
-                <span>🎤</span> Abrir Microfono
-            </button>
-            <div class="timer-display" id="timerDisplay"></div>
-            <div id="voiceSupportMessage" class="unsupported-message"></div>
-        </div>
+        <div class="orb-status">Haz clic en cualquier lugar para comenzar</div>
     </div>
 
-    <!-- SECCIÓN CHAT -->
-    <div class="chat-section">
-        <div id="chatContainer">
-            <div class="chat-header">
-                <div class="chat-title">
-                    <h1>Orbe TEC</h1>
-                    <p>Asistente virtual con voz profesional</p>
-                </div>
-                <button id="refreshChat"><span>↻</span> Reiniciar Chat</button>
-            </div>
-
-            <div id="chat"></div>
-            
-            <div id="loader">
-                <div class="typing-indicator">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <span>Procesando tu mensaje...</span>
+    <!-- Contenedor principal (oculto inicialmente) -->
+    <div id="appContainer" class="app-container">
+        <!-- SECCIÓN ORBE (ahora dentro del contenedor) -->
+        <div class="orb-section">
+            <div class="orb-container">
+                <div class="orb orb-state-idle" id="orb">
+                    <div class="orb-inner">
+                        <div class="orb-letter">T</div>
+                    </div>
+                    <div class="orb-pulse"></div>
                 </div>
             </div>
             
-            <div id="inputBox">
-                <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Abrir Microfono'..." />
-                <button id="sendBtn">Enviar</button>
+            <div class="orb-controls">
+                <div class="orb-status" id="orbStatus">En espera</div>
+                <button class="listen-btn" id="listenBtn">
+                    <span>🎤</span> Abrir Micrófono
+                </button>
+                <div class="timer-display" id="timerDisplay"></div>
+                <div id="voiceSupportMessage" class="unsupported-message"></div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN CHAT -->
+        <div class="chat-section">
+            <div id="chatContainer">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <h1>Orbe TEC</h1>
+                        <p>Asistente virtual con voz profesional</p>
+                    </div>
+                    <button id="refreshChat"><span>↻</span> Reiniciar Chat</button>
+                </div>
+
+                <div id="chat"></div>
+                
+                <div id="loader">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <span>Procesando tu mensaje...</span>
+                    </div>
+                </div>
+                
+                <div id="inputBox">
+                    <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Abrir Micrófono'..." />
+                    <button id="sendBtn">Enviar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-// ==================== CONFIGURACIÓN ====================
-const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
-let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
-localStorage.setItem("sessionId", sessionId);
+    <script>
+        // ==================== CONFIGURACIÓN ====================
+        const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
+        const WORKER_URL = 'https://tts-proxy-tec.emonroy-e51.workers.dev/'; // Tu worker de Cloudflare
 
-// ==================== ESTADOS DEL ORBE ====================
-const ORB_STATES = {
-    IDLE: 'idle',
-    LISTENING: 'listening',
-    THINKING: 'thinking',
-    SPEAKING: 'speaking',
-    CONFUSED: 'confused',
-    ERROR: 'error'
-};
+        let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
+        localStorage.setItem("sessionId", sessionId);
 
-let currentOrbState = ORB_STATES.IDLE;
-let listenTimeout = null;
-let listenTimer = null;
-let listenTimeLeft = 30;
-let isListening = false;
-let currentAudio = null; // Para controlar reproducción
-
-// Elementos DOM
-const orb = document.getElementById('orb');
-const orbStatus = document.getElementById('orbStatus');
-const listenBtn = document.getElementById('listenBtn');
-const timerDisplay = document.getElementById('timerDisplay');
-const voiceSupportMessage = document.getElementById('voiceSupportMessage');
-
-// ==================== DETECCIÓN DE SOPORTE DE RECONOCIMIENTO DE VOZ ====================
-const speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-
-if (!speechRecognitionSupported) {
-    console.warn('Reconocimiento de voz no soportado en este navegador');
-    listenBtn.disabled = true;
-    listenBtn.title = 'Reconocimiento de voz no disponible en este navegador';
-    voiceSupportMessage.textContent = '🔇 El reconocimiento de voz no está disponible en este navegador. Usa Chrome, Edge o Safari para hablar.';
-} else {
-    console.log('Reconocimiento de voz soportado ✅');
-}
-
-// ==================== RECONOCIMIENTO DE VOZ (solo si soportado) ====================
-let recognition = null;
-if (speechRecognitionSupported) {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'es-ES';
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-        isListening = true;
-        updateOrbState(ORB_STATES.LISTENING, 'Escuchando... Habla ahora');
-        listenBtn.disabled = true;
-        listenBtn.innerHTML = '<span>⏸️</span> Escuchando...';
-        startListenTimer();
-    };
-
-    recognition.onresult = (event) => {
-        const lastResult = event.results[event.results.length - 1];
-        const transcript = lastResult[0].transcript;
-        
-        if (lastResult.isFinal) {
-            console.log('Texto reconocido (final):', transcript);
-            stopListening();
-            // Enviar el texto al chat automáticamente
-            document.getElementById('messageInput').value = transcript;
-            sendMessage();
-        } else {
-            // Mostrar texto provisional
-            orbStatus.textContent = `Escuchando: "${transcript}"`;
-        }
-    };
-
-    recognition.onerror = (event) => {
-        console.error('Error de reconocimiento:', event.error);
-        stopListening();
-        let message = '';
-        switch(event.error) {
-            case 'not-allowed': message = 'Permiso de micrófono denegado'; break;
-            case 'no-speech': message = 'No se detectó voz'; break;
-            case 'network': message = 'Error de red'; break;
-            default: message = 'Error al escuchar';
-        }
-        updateOrbState(ORB_STATES.CONFUSED, message);
-        setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
-    };
-
-    recognition.onend = () => {
-        if (isListening) stopListening();
-    };
-}
-
-// Funciones de control de escucha
-function startListening() {
-    if (!recognition) {
-        alert('Reconocimiento de voz no disponible en este navegador');
-        return;
-    }
-    if (isListening) return;
-    try {
-        recognition.start();
-    } catch (error) {
-        console.error('Error al iniciar reconocimiento:', error);
-    }
-}
-
-function stopListening() {
-    if (!isListening) return;
-    isListening = false;
-    if (recognition) recognition.stop();
-    clearInterval(listenTimer);
-    clearTimeout(listenTimeout);
-    listenBtn.disabled = false;
-    listenBtn.innerHTML = '<span>🎤</span> Abrir Microfono';
-    timerDisplay.textContent = '';
-}
-
-function startListenTimer() {
-    listenTimeLeft = 30;
-    updateTimerDisplay();
-    listenTimer = setInterval(() => {
-        listenTimeLeft--;
-        updateTimerDisplay();
-        if (listenTimeLeft <= 0) {
-            stopListening();
-            showTimeoutWarning();
-        }
-    }, 1000);
-    listenTimeout = setTimeout(() => {
-        stopListening();
-        showTimeoutWarning();
-    }, 30000);
-}
-
-function updateTimerDisplay() {
-    if (isListening) {
-        timerDisplay.textContent = `Tiempo restante: ${listenTimeLeft}s`;
-        timerDisplay.style.color = listenTimeLeft <= 10 ? '#ff4444' : listenTimeLeft <= 20 ? '#ffcc00' : '#4DA3FF';
-    } else {
-        timerDisplay.textContent = '';
-    }
-}
-
-function showTimeoutWarning() {
-    updateOrbState(ORB_STATES.CONFUSED, 'Tiempo agotado. ¿Quieres intentar de nuevo?');
-    const warning = document.createElement('div');
-    warning.className = 'timeout-warning';
-    warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Abrir Microfono" o escribe tu mensaje.</span>`;
-    document.getElementById('chat').appendChild(warning);
-    setTimeout(() => warning.remove(), 5000);
-}
-// ==================== SÍNTESIS DE VOZ (proxy vía Cloudflare Worker) ====================
-async function speakText(text) {
-    console.log('🎤 speakText iniciado con texto:', text);
-    
-    if (!text || text.trim() === '') return;
-
-    // Limpiar HTML (quitar etiquetas)
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = text;
-    let cleanText = tempDiv.textContent || tempDiv.innerText || "";
-    
-    // 🔹 NUEVO: Reemplazar URLs por "enlace" para que no se lean
-    cleanText = cleanText.replace(/\bhttps?:\/\/[^\s]+/g, 'enlace');
-
-    updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
-
-    try {
-        const workerUrl = 'https://tts-proxy-tec.emonroy-e51.workers.dev/'; // tu URL
-        
-        const response = await fetch(workerUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                input: { text: cleanText }
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Error del proxy: ${response.status} - ${errorData.error || ''}`);
-        }
-
-        const data = await response.json();
-        
-        if (!data.audioContent) {
-            throw new Error('No se recibió audioContent');
-        }
-
-        const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-        
-        audio.onplay = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
-        audio.onended = () => {
-            updateOrbState(ORB_STATES.IDLE);
-            currentAudio = null;
-        };
-        
-        audio.onerror = (e) => {
-            console.error('Error en reproducción:', e);
-            updateOrbState(ORB_STATES.ERROR, 'Error al reproducir');
-            setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
-            fallbackSpeak(cleanText);
+        // ==================== ESTADOS DEL ORBE ====================
+        const ORB_STATES = {
+            IDLE: 'idle',
+            LISTENING: 'listening',
+            THINKING: 'thinking',
+            SPEAKING: 'speaking',
+            CONFUSED: 'confused',
+            ERROR: 'error'
         };
 
-        currentAudio = audio;
-        await audio.play();
+        let currentOrbState = ORB_STATES.IDLE;
+        let listenTimeout = null;
+        let listenTimer = null;
+        let listenTimeLeft = 30;
+        let isListening = false;
+        let currentAudio = null;
 
-    } catch (error) {
-        console.error('Error en speakText:', error);
-        updateOrbState(ORB_STATES.ERROR, 'Error en voz');
-        fallbackSpeak(cleanText);
-    }
-}
+        // Elementos DOM
+        const initialScreen = document.getElementById('initialScreen');
+        const appContainer = document.getElementById('appContainer');
+        const orb = document.getElementById('orb');
+        const orbStatus = document.getElementById('orbStatus');
+        const listenBtn = document.getElementById('listenBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const voiceSupportMessage = document.getElementById('voiceSupportMessage');
 
-// Función de respaldo con Web Speech API
-function fallbackSpeak(text) {
-    console.log('⚠️ Usando fallback de voz nativa');
-    if (!window.speechSynthesis) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'es-ES';
-    utterance.onstart = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando (voz local)...');
-    utterance.onend = () => updateOrbState(ORB_STATES.IDLE);
-    utterance.onerror = (e) => console.error('Error en fallback:', e);
-    window.speechSynthesis.speak(utterance);
-}
+        // ==================== DETECCIÓN DE RECONOCIMIENTO DE VOZ ====================
+        const speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+        if (!speechRecognitionSupported) {
+            listenBtn.disabled = true;
+            listenBtn.title = 'Reconocimiento de voz no disponible en este navegador';
+            voiceSupportMessage.textContent = '🔇 El reconocimiento de voz no está disponible. Usa Chrome/Edge para hablar.';
+        }
 
-// ==================== FUNCIONES DEL ORBE ====================
-function updateOrbState(state, message = '') {
-    currentOrbState = state;
-    orb.className = 'orb';
-    orb.classList.add(`orb-state-${state}`);
-    
-    const statusMessages = {
-        idle: 'En espera',
-        listening: 'Escuchando...',
-        thinking: 'Pensando...',
-        speaking: 'Hablando...',
-        confused: 'No entendí eso',
-        error: 'Error de conexión'
-    };
-    orbStatus.textContent = message || statusMessages[state];
-    console.log('Orbe:', state);
-}
+        // ==================== RECONOCIMIENTO DE VOZ ====================
+        let recognition = null;
+        if (speechRecognitionSupported) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'es-ES';
+            recognition.maxAlternatives = 1;
 
-// ==================== FUNCIONES DEL CHAT ====================
-function showInitialMessage() {
-    setTimeout(() => {
-        const mensajeInicial = `
-            <b>¡Hola! soy tu Orbe TEC.</b><br>
-            Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Abrir Microfono" para hablarme.<br><br>
-            ¿En qué puedo ayudarte hoy?
-        `;
-        agregarMensajeBot(mensajeInicial);
-        // Reproducir el mensaje inicial con TTS
-        speakText(mensajeInicial);
-    }, 500);
-}
+            recognition.onstart = () => {
+                isListening = true;
+                updateOrbState(ORB_STATES.LISTENING, 'Escuchando... Habla ahora');
+                listenBtn.disabled = true;
+                listenBtn.innerHTML = '<span>⏸️</span> Escuchando...';
+                startListenTimer();
+            };
 
-async function sendMessage() {
-    const input = document.getElementById("messageInput");
-    const message = input.value.trim();
-    if (!message) return;
+            recognition.onresult = (event) => {
+                const lastResult = event.results[event.results.length - 1];
+                const transcript = lastResult[0].transcript;
+                
+                if (lastResult.isFinal) {
+                    console.log('Texto reconocido (final):', transcript);
+                    stopListening();
+                    document.getElementById('messageInput').value = transcript;
+                    sendMessage();
+                } else {
+                    orbStatus.textContent = `Escuchando: "${transcript}"`;
+                }
+            };
 
-    agregarMensajeUsuario(message);
-    input.value = "";
-    input.focus();
+            recognition.onerror = (event) => {
+                console.error('Error de reconocimiento:', event.error);
+                stopListening();
+                let message = '';
+                switch(event.error) {
+                    case 'not-allowed': message = 'Permiso de micrófono denegado'; break;
+                    case 'no-speech': message = 'No se detectó voz'; break;
+                    case 'network': message = 'Error de red'; break;
+                    default: message = 'Error al escuchar';
+                }
+                updateOrbState(ORB_STATES.CONFUSED, message);
+                setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
+            };
 
-    mostrarProcesando(true);
-    updateOrbState(ORB_STATES.THINKING, 'Procesando...');
+            recognition.onend = () => {
+                if (isListening) stopListening();
+            };
+        }
 
-    try {
-        const response = await fetch(N8N_WEBHOOK_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message, sessionId })
+        // Funciones de control de escucha
+        function startListening() {
+            if (!recognition) {
+                alert('Reconocimiento de voz no disponible en este navegador');
+                return;
+            }
+            if (isListening) return;
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error al iniciar reconocimiento:', error);
+            }
+        }
+
+        function stopListening() {
+            if (!isListening) return;
+            isListening = false;
+            if (recognition) recognition.stop();
+            clearInterval(listenTimer);
+            clearTimeout(listenTimeout);
+            listenBtn.disabled = false;
+            listenBtn.innerHTML = '<span>🎤</span> Abrir Micrófono';
+            timerDisplay.textContent = '';
+        }
+
+        function startListenTimer() {
+            listenTimeLeft = 30;
+            updateTimerDisplay();
+            listenTimer = setInterval(() => {
+                listenTimeLeft--;
+                updateTimerDisplay();
+                if (listenTimeLeft <= 0) {
+                    stopListening();
+                    showTimeoutWarning();
+                }
+            }, 1000);
+            listenTimeout = setTimeout(() => {
+                stopListening();
+                showTimeoutWarning();
+            }, 30000);
+        }
+
+        function updateTimerDisplay() {
+            if (isListening) {
+                timerDisplay.textContent = `Tiempo restante: ${listenTimeLeft}s`;
+                timerDisplay.style.color = listenTimeLeft <= 10 ? '#ff4444' : listenTimeLeft <= 20 ? '#ffcc00' : '#4DA3FF';
+            } else {
+                timerDisplay.textContent = '';
+            }
+        }
+
+        function showTimeoutWarning() {
+            updateOrbState(ORB_STATES.CONFUSED, 'Tiempo agotado. ¿Quieres intentar de nuevo?');
+            const warning = document.createElement('div');
+            warning.className = 'timeout-warning';
+            warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Abrir Micrófono" o escribe tu mensaje.</span>`;
+            document.getElementById('chat').appendChild(warning);
+            setTimeout(() => warning.remove(), 5000);
+        }
+
+        // ==================== SÍNTESIS DE VOZ (proxy vía Worker) ====================
+        function limpiarTextoParaVoz(texto) {
+            return texto.replace(/\bhttps?:\/\/[^\s]+/g, 'enlace');
+        }
+
+        async function speakText(text) {
+            console.log('🎤 speakText iniciado con texto:', text);
+            
+            if (!text || text.trim() === '') return;
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = text;
+            let cleanText = tempDiv.textContent || tempDiv.innerText || "";
+            cleanText = limpiarTextoParaVoz(cleanText);
+
+            updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
+
+            try {
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input: { text: cleanText }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Error del proxy: ${response.status} - ${errorData.error || ''}`);
+                }
+
+                const data = await response.json();
+                
+                if (!data.audioContent) {
+                    throw new Error('No se recibió audioContent');
+                }
+
+                const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+                
+                audio.onplay = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
+                audio.onended = () => {
+                    updateOrbState(ORB_STATES.IDLE);
+                    currentAudio = null;
+                };
+                
+                audio.onerror = (e) => {
+                    console.error('Error en reproducción:', e);
+                    updateOrbState(ORB_STATES.ERROR, 'Error al reproducir');
+                    setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
+                    fallbackSpeak(cleanText);
+                };
+
+                currentAudio = audio;
+                await audio.play();
+
+            } catch (error) {
+                console.error('Error en speakText:', error);
+                updateOrbState(ORB_STATES.ERROR, 'Error en voz');
+                fallbackSpeak(cleanText);
+            }
+        }
+
+        function fallbackSpeak(text) {
+            console.log('⚠️ Usando fallback de voz nativa');
+            if (!window.speechSynthesis) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-ES';
+            utterance.onstart = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando (voz local)...');
+            utterance.onend = () => updateOrbState(ORB_STATES.IDLE);
+            utterance.onerror = (e) => console.error('Error en fallback:', e);
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // ==================== FUNCIONES DEL ORBE ====================
+        function updateOrbState(state, message = '') {
+            currentOrbState = state;
+            orb.className = 'orb';
+            orb.classList.add(`orb-state-${state}`);
+            
+            const statusMessages = {
+                idle: 'En espera',
+                listening: 'Escuchando...',
+                thinking: 'Pensando...',
+                speaking: 'Hablando...',
+                confused: 'No entendí eso',
+                error: 'Error de conexión'
+            };
+            orbStatus.textContent = message || statusMessages[state];
+            console.log('Orbe:', state);
+        }
+
+        // ==================== FUNCIONES DEL CHAT ====================
+        function convertirEnlaces(texto) {
+            if (!texto) return "";
+            texto = texto.replace(
+                /\[([^\]]+)\]\(([^)]+)\)/g,
+                '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
+            );
+            texto = texto.replace(
+                /\b(https?:\/\/[^\s<]+)/g,
+                '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
+            );
+            return texto;
+        }
+
+        function agregarMensajeUsuario(msg) {
+            const chat = document.getElementById("chat");
+            const burbuja = document.createElement("div");
+            burbuja.className = "msg user";
+            burbuja.innerHTML = msg;
+            const time = document.createElement("div");
+            time.className = "msg-time";
+            time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            burbuja.appendChild(time);
+            chat.appendChild(burbuja);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function agregarMensajeBot(msg) {
+            const chat = document.getElementById("chat");
+            const burbuja = document.createElement("div");
+            burbuja.className = "msg bot";
+            
+            if (/<a\s/i.test(msg)) {
+                burbuja.innerHTML = msg;
+            } else {
+                burbuja.innerHTML = convertirEnlaces(msg);
+            }
+            
+            const time = document.createElement("div");
+            time.className = "msg-time";
+            time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            burbuja.appendChild(time);
+            chat.appendChild(burbuja);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function mostrarProcesando(show) {
+            document.getElementById("loader").style.display = show ? "block" : "none";
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const message = input.value.trim();
+            if (!message) return;
+
+            agregarMensajeUsuario(message);
+            input.value = "";
+            input.focus();
+
+            mostrarProcesando(true);
+            updateOrbState(ORB_STATES.THINKING, 'Procesando...');
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message, sessionId })
+                });
+
+                if (!response.ok) throw new Error(`Error ${response.status}`);
+
+                const data = await response.json();
+                const respuesta = data.output || data.message || "Sin respuesta";
+
+                mostrarProcesando(false);
+                agregarMensajeBot(respuesta);
+                
+                await speakText(respuesta);
+
+            } catch (error) {
+                console.error("Error:", error);
+                mostrarProcesando(false);
+                updateOrbState(ORB_STATES.ERROR, 'Error de conexión');
+                agregarMensajeBot(`⚠️ Error al conectar con el servidor<br><small>${error.message}</small>`);
+                setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
+            }
+        }
+
+        function refrescarChat() {
+            document.getElementById("chat").innerHTML = "";
+            sessionId = crypto.randomUUID();
+            localStorage.setItem("sessionId", sessionId);
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            stopListening();
+            updateOrbState(ORB_STATES.IDLE, 'Chat reiniciado');
+            agregarMensajeBot(`<b>¡Chat reiniciado! 🔄</b><br>¿En qué puedo ayudarte ahora?`);
+        }
+
+        // ==================== INICIALIZACIÓN Y EVENTOS ====================
+        function iniciarAplicacion() {
+            // Ocultar pantalla inicial y mostrar contenedor principal
+            initialScreen.style.display = 'none';
+            appContainer.style.display = 'flex';
+
+            // Mostrar mensaje de bienvenida en el chat
+            agregarMensajeBot(`
+                <b>¡Hola! soy tu Orbe TEC.</b><br>
+                Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Abrir Micrófono" para hablarme.<br><br>
+                ¿En qué puedo ayudarte hoy?
+            `);
+
+            // Reproducir mensaje de bienvenida con TTS
+            const mensajeVoz = `¡Hola! soy tu Orbe TEC. Puedes escribirme o hacer clic en Abrir Micrófono para hablarme. ¿En qué puedo ayudarte hoy?`;
+            speakText(mensajeVoz);
+        }
+
+        // Evento de clic en la pantalla inicial
+        initialScreen.addEventListener('click', function onClick() {
+            iniciarAplicacion();
+            initialScreen.removeEventListener('click', onClick);
         });
 
-        if (!response.ok) throw new Error(`Error ${response.status}`);
-
-        const data = await response.json();
-        const respuesta = data.output || data.message || "Sin respuesta";
-
-        mostrarProcesando(false);
-        agregarMensajeBot(respuesta);
-        
-        // Hablar la respuesta con la API externa
-        await speakText(respuesta);
-
-    } catch (error) {
-        console.error("Error:", error);
-        mostrarProcesando(false);
-        updateOrbState(ORB_STATES.ERROR, 'Error de conexión');
-        agregarMensajeBot(`⚠️ Error al conectar con el servidor<br><small>${error.message}</small>`);
-        setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
-    }
-}
-
-function agregarMensajeUsuario(msg) {
-    const chat = document.getElementById("chat");
-    const burbuja = document.createElement("div");
-    burbuja.className = "msg user";
-    burbuja.innerHTML = msg;
-    const time = document.createElement("div");
-    time.className = "msg-time";
-    time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    burbuja.appendChild(time);
-    chat.appendChild(burbuja);
-    chat.scrollTop = chat.scrollHeight;
-}
-
- // Convierte URLs y markdown a enlaces HTML clickeables
-function convertirEnlaces(texto) {
-    if (!texto) return "";
-    // 1. Convertir [texto](url) (markdown)
-    texto = texto.replace(
-        /\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
-    );
-    // 2. Convertir URLs sueltas (http:// o https://)
-    texto = texto.replace(
-        /\b(https?:\/\/[^\s<]+)/g,
-        '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
-    );   
-    return texto;
-}
-
-function agregarMensajeBot(msg) {
-    const chat = document.getElementById("chat");
-    const burbuja = document.createElement("div");
-    burbuja.className = "msg bot";
-    // Si el mensaje ya contiene etiquetas <a>, lo mostramos directamente (viene del backend)
-    // Si no, convertimos los enlaces
-    if (/<a\s/i.test(msg)) {
-        burbuja.innerHTML = msg;
-    } else {
-        burbuja.innerHTML = convertirEnlaces(msg);
-    }
-    chat.appendChild(burbuja);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-function mostrarProcesando(show) {
-    document.getElementById("loader").style.display = show ? "block" : "none";
-}
-
-function refrescarChat() {
-    document.getElementById("chat").innerHTML = "";
-    sessionId = crypto.randomUUID();
-    localStorage.setItem("sessionId", sessionId);
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-    }
-    stopListening();
-    updateOrbState(ORB_STATES.IDLE, 'Chat reiniciado');
-    agregarMensajeBot(`<b>¡Chat reiniciado! 🔄</b><br>¿En qué puedo ayudarte ahora?`);
-}
-
-// ==================== EVENT LISTENERS ====================
-document.addEventListener('DOMContentLoaded', function() {
-    showInitialMessage();
-    
-    document.getElementById("sendBtn").addEventListener("click", sendMessage);
-    document.getElementById("messageInput").addEventListener("keypress", (e) => {
-        if (e.key === "Enter") sendMessage();
-    });
-    document.getElementById("refreshChat").addEventListener("click", refrescarChat);
-    
-    // Solo asignar evento si el reconocimiento está soportado
-    if (speechRecognitionSupported) {
-        listenBtn.addEventListener("click", startListening);
-    } else {
-        // El botón ya está deshabilitado por el HTML/JS
-    }
-    
-    // Detener escucha si el usuario empieza a escribir
-    document.getElementById("messageInput").addEventListener("input", () => {
-        if (isListening) stopListening();
-    });
-});
-
-// Limpiar recursos al cerrar
-window.addEventListener('beforeunload', () => {
-    if (isListening && recognition) recognition.stop();
-    if (currentAudio) currentAudio.pause();
-});
-</script>
+        // Configurar event listeners para los elementos del chat (solo se ejecutarán cuando existan)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Los event listeners se asignan aquí pero los elementos pueden no estar visibles aún
+            // Sin embargo, al hacer clic en la pantalla inicial, se mostrarán y funcionarán
+            document.getElementById("sendBtn").addEventListener("click", sendMessage);
+            document.getElementById("messageInput").addEventListener("keypress", (e) => {
+                if (e.key === "Enter") sendMessage();
+            });
+            document.getElementById("refreshChat").addEventListener("click", refrescarChat);
+            
+            if (speechRecognitionSupported) {
+                listenBtn.addEventListener("click", startListening);
+            }
+            
+            document.getElementById("messageInput").addEventListener("input", () => {
+                if (isListening) stopListening();
+            });
+        });
+    </script>
 </body>
 </html>
