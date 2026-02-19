@@ -567,7 +567,7 @@ async function speakText(text) {
                 input: { text: cleanText },
                 voice: {
                     languageCode: 'es-ES',
-                    name: 'es-ES-Wavenet-A', // Voz más natural
+                    name: 'es-US-Standard-A', // Voz más natural
                     ssmlGender: 'FEMALE'
                 },
                 audioConfig: { audioEncoding: 'MP3' }
@@ -672,7 +672,6 @@ function showInitialMessage() {
     setTimeout(() => {
         agregarMensajeBot(`
             <b>¡Hola! 👋 Soy tu Orbe TEC.</b><br>
-            Ahora tengo una voz más natural gracias a Google Cloud.<br><br>
             Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Escuchar de nuevo" para hablarme.<br><br>
             ¿En qué puedo ayudarte hoy?
         `);
