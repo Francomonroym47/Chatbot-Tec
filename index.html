@@ -544,16 +544,18 @@ async function speakText(text) {
     
     if (!text || text.trim() === '') return;
 
-    // Limpiar HTML
+    // Limpiar HTML (quitar etiquetas)
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = text;
-    const cleanText = tempDiv.textContent || tempDiv.innerText || "";
+    let cleanText = tempDiv.textContent || tempDiv.innerText || "";
+    
+    // 🔹 NUEVO: Reemplazar URLs por "enlace" para que no se lean
+    cleanText = cleanText.replace(/\bhttps?:\/\/[^\s]+/g, 'enlace');
 
     updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
 
     try {
-        // Llamar a Cloudflare Worker (no a Google directamente)
-        const workerUrl = 'https://tts-proxy-tec.emonroy-e51.workers.dev'; // REEMPLAZA CON TU URL
+        const workerUrl = 'https://tts-proxy-tec.emonroy-e51.workers.dev/'; // tu URL
         
         const response = await fetch(workerUrl, {
             method: 'POST',
