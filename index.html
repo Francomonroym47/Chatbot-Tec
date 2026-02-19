@@ -387,8 +387,6 @@
 <script>
 // ==================== CONFIGURACIÓN ====================
 const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
-const GOOGLE_TTS_API_KEY = "AIzaSyBw9gcm5AKRGOi0iGbHgCS6CbUuwfjr4VI"; // Tu API key
-
 let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
 localStorage.setItem("sessionId", sessionId);
 
@@ -540,99 +538,63 @@ function showTimeoutWarning() {
     document.getElementById('chat').appendChild(warning);
     setTimeout(() => warning.remove(), 5000);
 }
-
-// ==================== SÍNTESIS DE VOZ CON GOOGLE CLOUD TTS ====================
+// ==================== SÍNTESIS DE VOZ (proxy vía Cloudflare Worker) ====================
 async function speakText(text) {
     console.log('🎤 speakText iniciado con texto:', text);
     
-    if (!text || text.trim() === '') {
-        console.warn('Texto vacío, no se reproduce voz');
-        return;
-    }
+    if (!text || text.trim() === '') return;
 
     // Limpiar HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = text;
     const cleanText = tempDiv.textContent || tempDiv.innerText || "";
-    console.log('📝 Texto limpio:', cleanText);
 
     updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
 
     try {
-        console.log('🌐 Enviando petición a Google TTS...');
-        const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+        // Llamar a Cloudflare Worker (no a Google directamente)
+        const workerUrl = 'https://tts-proxy-tec.emonroy-e51.workers.dev'; // REEMPLAZA CON TU URL
+        
+        const response = await fetch(workerUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                input: { text: cleanText },
-                voice: {
-                    languageCode: 'es-ES',
-                    name: 'es-US-Standard-A', // Voz más natural
-                    ssmlGender: 'FEMALE'
-                },
-                audioConfig: { audioEncoding: 'MP3' }
+                input: { text: cleanText }
             })
         });
 
-        console.log('📡 Respuesta status:', response.status);
-
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('❌ Error de Google TTS:', errorData);
-            throw new Error(`Error TTS: ${errorData.error?.message || response.status}`);
+            throw new Error(`Error del proxy: ${response.status} - ${errorData.error || ''}`);
         }
 
         const data = await response.json();
-        console.log('✅ Datos recibidos de Google:', Object.keys(data));
         
         if (!data.audioContent) {
-            console.error('❌ No se recibió audioContent');
             throw new Error('No se recibió audioContent');
         }
 
-        console.log('🎵 audioContent length:', data.audioContent.length);
-        
         const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
         
-        audio.onplay = () => {
-            console.log('▶️ Audio comenzó a reproducirse');
-            updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
-        };
-        
+        audio.onplay = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
         audio.onended = () => {
-            console.log('⏹️ Audio terminado');
             updateOrbState(ORB_STATES.IDLE);
             currentAudio = null;
         };
         
         audio.onerror = (e) => {
-            console.error('❌ Error en reproducción de audio:', e);
+            console.error('Error en reproducción:', e);
             updateOrbState(ORB_STATES.ERROR, 'Error al reproducir');
             setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
-            // Fallback a voz nativa
             fallbackSpeak(cleanText);
         };
 
         currentAudio = audio;
-        
-        // Intentar reproducir
-        console.log('🎯 Intentando reproducir audio...');
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise
-                .then(() => console.log('✅ Reproducción iniciada correctamente'))
-                .catch(err => {
-                    console.error('❌ Error en play():', err);
-                    updateOrbState(ORB_STATES.ERROR, 'Reproducción bloqueada');
-                    setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
-                });
-        }
+        await audio.play();
 
     } catch (error) {
-        console.error('❌ Error en speakText:', error);
+        console.error('Error en speakText:', error);
         updateOrbState(ORB_STATES.ERROR, 'Error en voz');
-        // Fallback
         fallbackSpeak(cleanText);
     }
 }
