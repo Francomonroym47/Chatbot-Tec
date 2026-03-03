@@ -61,14 +61,16 @@
 
         /* Contenedor principal (oculto inicialmente) */
         .app-container {
-            display: none;
-            max-width: 1200px;
-            width: 100%;
-            gap: 30px;
-            flex-wrap: wrap;
-            padding: 20px;
-            opacity: 0;
-            animation: fadeIn 0.8s forwards;
+        display: none; /* Se mantiene oculto hasta el clic */
+        max-width: 1200px;
+        width: 100%;
+        height: calc(100vh - 40px); /* Ocupa casi toda la pantalla, restando padding */
+        gap: 30px;
+        flex-wrap: wrap;
+        padding: 20px;
+        opacity: 0;
+        animation: fadeIn 0.8s forwards;
+        align-items: stretch; /* Para que los hijos se estiren verticalmente */
         }
 
         @keyframes fadeIn {
@@ -227,17 +229,23 @@
         .listen-btn:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
         .timer-display { margin-top: 15px; font-size: 14px; color: #4DA3FF; }
 
-        .chat-section { flex: 1; min-width: 400px; display: flex; flex-direction: column; }
-        #chatContainer {
-            flex: 1;
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 30px;
+        .orb-section {
+            flex: 0 0 320px; /* Ancho fijo, no crece */
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            min-height: 600px;
+            justify-content: center; /* Centra verticalmente el contenido del orbe */
+            align-items: center;
+        }
+        #chatContainer {
+        flex: 1; /* Ocupa el espacio restante */
+        background: rgba(255,255,255,0.05);
+        border-radius: 20px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        min-height: 0; /* Importante para flexbox */
         }
         .chat-header {
             display: flex;
@@ -270,11 +278,11 @@
         }
         #refreshChat:hover { background: rgba(255,255,255,0.2); }
         #chat {
-            flex: 1;
+            flex: 1; /* Crece para llenar el espacio */
             overflow-y: auto;
             padding-right: 15px;
             margin-bottom: 20px;
-            max-height: 400px;
+            min-height: 0; /* Necesario para que flex funcione */
         }
         .msg {
             margin-bottom: 15px;
