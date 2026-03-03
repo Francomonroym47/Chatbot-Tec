@@ -59,19 +59,20 @@ body {
     100% { opacity: 0.6; }
 }
 
-/* ==================== CONTENEDOR PRINCIPAL (oculto inicialmente) ==================== */
+/* ==================== CONTENEDOR PRINCIPAL (centrado) ==================== */
 .app-container {
     display: none;
     width: 100%;
-    max-width: 1400px; /* opcional, para no estirar demasiado en pantallas grandes */
-    height: 100vh;
+    max-width: 1300px; /* Ancho máximo para pantallas grandes */
+    height: 95vh;      /* Un poco de margen vertical */
     padding: 20px;
     gap: 30px;
     flex-wrap: nowrap;
-    align-items: stretch; /* hijos se estiran verticalmente */
+    align-items: stretch;
     opacity: 0;
     animation: fadeIn 0.8s forwards;
-    margin: 0 auto; /* centrar horizontalmente */
+    margin: 0 auto;    /* Centrar horizontalmente */
+    justify-content: center; /* Centrar contenido si sobra espacio */
 }
 
 @keyframes fadeIn {
@@ -80,12 +81,15 @@ body {
 
 /* ==================== SECCIÓN DEL ORBE (izquierda) ==================== */
 .orb-section {
-    flex: 0 0 320px; /* ancho fijo */
+    flex: 0 0 320px;   /* Ancho fijo */
     display: flex;
     flex-direction: column;
-    justify-content: center; /* centra verticalmente el contenido */
+    justify-content: center; /* Centra verticalmente el contenido */
     align-items: center;
     height: 100%;
+    background: rgba(255,255,255,0.02); /* Solo para depuración, opcional */
+    border-radius: 20px;
+    padding: 20px 10px;
 }
 
 .orb-section .orb-container {
@@ -111,20 +115,27 @@ body {
     min-height: 24px;
 }
 
+/* Contenedor para los botones en fila */
+.button-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px 0;
+}
+
 .listen-btn {
-    padding: 12px 20px; /* ajuste para que quepan dos botones */
+    padding: 12px 20px;
     background: linear-gradient(135deg, #00ff88, #00cc6a);
     color: white;
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    font-size: 14px; /* un poco más pequeño */
+    font-size: 14px;
     font-weight: 600;
     transition: all 0.3s;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    margin: 0 5px; /* separación entre botones */
 }
 
 .listen-btn:hover {
@@ -154,10 +165,10 @@ body {
 
 /* ==================== SECCIÓN DEL CHAT (derecha) ==================== */
 .chat-section {
-    flex: 1; /* ocupa el espacio restante */
+    flex: 1;           /* Ocupa el resto del ancho */
     display: flex;
     flex-direction: column;
-    min-width: 400px;
+    min-width: 500px;  /* Evita que se encoja demasiado */
     height: 100%;
 }
 
@@ -165,7 +176,7 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* crucial para el scroll */
+    min-height: 0;
     background: rgba(255,255,255,0.05);
     border-radius: 20px;
     padding: 30px;
@@ -233,11 +244,6 @@ body {
     word-wrap: break-word;
     animation: fadeIn 0.3s ease;
     position: relative;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .user {
@@ -351,22 +357,21 @@ body {
 }
 
 /* ==================== MEDIA QUERIES (móviles) ==================== */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .app-container {
         flex-direction: column;
-        padding: 10px;
-        gap: 15px;
+        height: auto;
+        min-height: 100vh;
     }
     .orb-section {
         flex: 0 0 auto;
         width: 100%;
         height: auto;
-        min-height: 300px;
+        min-height: 400px;
     }
     .chat-section {
         min-width: 100%;
-        height: auto;
-        flex: 1;
+        height: 500px;
     }
     .initial-screen .orb-container {
         width: 250px;
@@ -376,9 +381,8 @@ body {
         width: 180px;
         height: 180px;
     }
-    .listen-btn {
-        padding: 10px 15px;
-        font-size: 13px;
+    .button-row {
+        flex-wrap: wrap;
     }
 }
 
@@ -417,7 +421,7 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 60%; /* relativo al contenedor */
+    width: 60%;
     height: 60%;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 50%;
@@ -429,7 +433,7 @@ body {
 }
 
 .orb-letter {
-    font-size: clamp(30px, 10vw, 60px); /* responsive */
+    font-size: clamp(30px, 10vw, 60px);
     font-weight: 900;
     color: white;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
@@ -447,156 +451,77 @@ body {
     animation: pulse 2s ease-in-out infinite;
 }
 
-@keyframes rotateOrb {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(1.1); opacity: 0; }
-}
-
-@keyframes listeningPulse {
-    0%,100% { transform: scale(1); opacity: 0.7; }
-    50% { transform: scale(1.05); opacity: 1; }
-}
-
-@keyframes thinkingSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@keyframes speakingWave {
-    0%,100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-}
-
-@keyframes confusedShake {
-    0%,100% { transform: rotate(0deg); }
-    25% { transform: rotate(-5deg); }
-    75% { transform: rotate(5deg); }
-}
-
-@keyframes errorFlash {
-    0%,100% { opacity: 0.5; }
-    50% { opacity: 1; }
-}
+@keyframes rotateOrb { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
+@keyframes listeningPulse { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
+@keyframes thinkingSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes speakingWave { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes confusedShake { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+@keyframes errorFlash { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
 
 /* Estados del orbe */
-.orb-state-idle {
-    --orb-color-1: #4DA3FF;
-    --orb-color-2: #2a5298;
-    --orb-color-3: #1e3c72;
-    --orb-color-4: #4DA3FF;
-}
-.orb-state-listening {
-    --orb-color-1: #00ff88;
-    --orb-color-2: #00cc6a;
-    --orb-color-3: #00994c;
-    --orb-color-4: #00ff88;
-    animation: listeningPulse 1.5s ease-in-out infinite !important;
-}
-.orb-state-thinking {
-    --orb-color-1: #9966ff;
-    --orb-color-2: #7b52cc;
-    --orb-color-3: #5d3f99;
-    --orb-color-4: #9966ff;
-    animation: thinkingSpin 3s linear infinite !important;
-}
-.orb-state-speaking {
-    --orb-color-1: #ffcc00;
-    --orb-color-2: #ff9900;
-    --orb-color-3: #ff6600;
-    --orb-color-4: #ffcc00;
-    animation: speakingWave 1.2s ease-in-out infinite !important;
-}
-.orb-state-confused {
-    --orb-color-1: #ff4444;
-    --orb-color-2: #cc3636;
-    --orb-color-3: #992828;
-    --orb-color-4: #ff4444;
-    animation: confusedShake 0.5s ease-in-out infinite !important;
-}
-.orb-state-error {
-    --orb-color-1: #ff3366;
-    --orb-color-2: #cc2952;
-    --orb-color-3: #991f3d;
-    --orb-color-4: #ff3366;
-    animation: errorFlash 1s ease-in-out infinite !important;
-}
-    </style>
+.orb-state-idle { --orb-color-1: #4DA3FF; --orb-color-2: #2a5298; --orb-color-3: #1e3c72; --orb-color-4: #4DA3FF; }
+.orb-state-listening { --orb-color-1: #00ff88; --orb-color-2: #00cc6a; --orb-color-3: #00994c; --orb-color-4: #00ff88; animation: listeningPulse 1.5s ease-in-out infinite !important; }
+.orb-state-thinking { --orb-color-1: #9966ff; --orb-color-2: #7b52cc; --orb-color-3: #5d3f99; --orb-color-4: #9966ff; animation: thinkingSpin 3s linear infinite !important; }
+.orb-state-speaking { --orb-color-1: #ffcc00; --orb-color-2: #ff9900; --orb-color-3: #ff6600; --orb-color-4: #ffcc00; animation: speakingWave 1.2s ease-in-out infinite !important; }
+.orb-state-confused { --orb-color-1: #ff4444; --orb-color-2: #cc3636; --orb-color-3: #992828; --orb-color-4: #ff4444; animation: confusedShake 0.5s ease-in-out infinite !important; }
+.orb-state-error { --orb-color-1: #ff3366; --orb-color-2: #cc2952; --orb-color-3: #991f3d; --orb-color-4: #ff3366; animation: errorFlash 1s ease-in-out infinite !important; }
+</style>
 </head>
 <body>
-    <!-- Pantalla inicial: solo el orbe -->
-    <div id="initialScreen" class="initial-screen">
+<!-- Contenedor principal (oculto inicialmente) -->
+<div id="appContainer" class="app-container">
+    <!-- SECCIÓN ORBE (izquierda) -->
+    <div class="orb-section">
         <div class="orb-container">
-            <div class="orb orb-state-idle" id="initialOrb">
+            <div class="orb orb-state-idle" id="orb">
                 <div class="orb-inner">
                     <div class="orb-letter">T</div>
                 </div>
                 <div class="orb-pulse"></div>
             </div>
         </div>
-        <div class="orb-status">Haz clic en cualquier lugar para comenzar</div>
+        <div class="orb-controls">
+            <div class="orb-status" id="orbStatus">En espera</div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="listen-btn" id="listenBtn">
+                    <span>🎤</span> Abrir Micrófono
+                </button>
+                <button class="listen-btn" id="stopSpeechBtn" style="background: #ff4444;" title="Detener voz">
+                    <span>🔇</span> Detener Voz
+                </button>
+            </div>
+            <div class="timer-display" id="timerDisplay"></div>
+            <div id="voiceSupportMessage" class="unsupported-message"></div>
+        </div>
     </div>
 
-    <!-- Contenedor principal (oculto inicialmente) -->
-    <div id="appContainer" class="app-container">
-        <!-- SECCIÓN ORBE (ahora dentro del contenedor) -->
-        <div class="orb-section">
-            <div class="orb-container">
-                <div class="orb orb-state-idle" id="orb">
-                    <div class="orb-inner">
-                        <div class="orb-letter">T</div>
-                    </div>
-                    <div class="orb-pulse"></div>
+    <!-- SECCIÓN CHAT (derecha) -->
+    <div class="chat-section">
+        <div id="chatContainer">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h1>Orbe TEC</h1>
+                    <p>Asistente virtual con voz profesional</p>
+                </div>
+                <button id="refreshChat"><span>↻</span> Reiniciar Chat</button>
+            </div>
+            <div id="chat"></div>
+            <div id="loader">
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <span>Procesando tu mensaje...</span>
                 </div>
             </div>
-            
-         <div class="orb-controls">
-    <div class="orb-status" id="orbStatus">En espera</div>
-    <div style="display: flex; gap: 10px; justify-content: center;">
-        <button class="listen-btn" id="listenBtn">
-            <span>🎤</span> Abrir Micrófono
-        </button>
-        <button class="listen-btn" id="stopSpeechBtn" style="background: #ff4444;" title="Detener voz">
-            <span>🔇</span> Detener Voz
-        </button>
-    </div>
-    <div class="timer-display" id="timerDisplay"></div>
-    <div id="voiceSupportMessage" class="unsupported-message"></div>
-</div>
-
-        <!-- SECCIÓN CHAT -->
-        <div class="chat-section">
-            <div id="chatContainer">
-                <div class="chat-header">
-                    <div class="chat-title">
-                        <h1>Orbe TEC</h1>
-                        <p>Asistente virtual con voz profesional</p>
-                    </div>
-                    <button id="refreshChat"><span>↻</span> Reiniciar Chat</button>
-                </div>
-
-                <div id="chat"></div>
-                
-                <div id="loader">
-                    <div class="typing-indicator">
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <div class="typing-dot"></div>
-                        <span>Procesando tu mensaje...</span>
-                    </div>
-                </div>
-                
-                <div id="inputBox">
-                    <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Abrir Micrófono'..." />
-                    <button id="sendBtn">Enviar</button>
-                </div>
+            <div id="inputBox">
+                <input id="messageInput" type="text" placeholder="Escribe tu mensaje o haz clic en 'Abrir Micrófono'..." />
+                <button id="sendBtn">Enviar</button>
             </div>
         </div>
     </div>
+</div>
 <script>
     // ==================== CONFIGURACIÓN ====================
     const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
