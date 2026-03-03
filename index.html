@@ -58,22 +58,17 @@
             50% { opacity: 1; }
             100% { opacity: 0.6; }
         }
-
-        /* Contenedor principal (oculto inicialmente) */
-          .app-container {
-            display: none; /* se mantiene oculto hasta el clic */
-            max-width: 1400px; /* más ancho para aprovechar pantallas grandes */
+        .app-container {
+            display: none;
             width: 100%;
-            height: calc(100vh - 40px); /* casi toda la altura menos padding */
-            gap: 20px;
+            height: 100vh; /* Ocupa toda la altura de la ventana */
+            gap: 30px;
             padding: 20px;
             opacity: 0;
             animation: fadeIn 0.8s forwards;
-            display: flex;
-            flex-direction: row;
-            align-items: stretch; /* ambos ocupan el mismo alto */
+            flex-wrap: nowrap; /* Evita que se envuelvan en pantallas grandes */
+            align-items: stretch; /* Los hijos se estiran verticalmente */
         }
-
         @keyframes fadeIn {
             to { opacity: 1; }
         }
@@ -232,35 +227,35 @@
         .listen-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,136,0.4); }
         .listen-btn:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
         .timer-display { margin-top: 15px; font-size: 14px; color: #4DA3FF; }
-        
         .orb-section {
-            flex: 0 0 300px; /* ancho fijo de 300px */
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* centra verticalmente el contenido */
-            align-items: center;
-            background: rgba(255, 255, 255, 0.03); /* ligero fondo para separar visualmente */
-            border-radius: 20px;
-            padding: 20px;
+        flex: 0 0 320px; /* Ancho fijo, no se achica */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Centra verticalmente */
+        align-items: center;
+        height: 100%; /* Ocupa toda la altura del contenedor padre */
         }
         #chatContainer {
-            flex: 1; /* ocupa todo el alto disponible */
+            flex: 1; /* Crece para llenar la altura disponible */
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* ¡Importante! Permite que los hijos con scroll funcionen */
             background: rgba(255,255,255,0.05);
             border-radius: 20px;
             padding: 30px;
-            display: flex;
-            flex-direction: column;
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.1);
-            min-height: 0; /* necesario para que flex funcione */
         }
         .chat-section {
-            flex: 1; /* ocupa el resto del espacio */
+            flex: 1; /* Ocupa el espacio restante */
             display: flex;
             flex-direction: column;
-            min-width: 0; /* evita que se desborde */
+            height: 100%; /* Ocupa toda la altura */
+            min-width: 400px; /* Evita que se encoja demasiado */
         }
-        .chat-header, #inputBox {
-        flex-shrink: 0;}
+        .chat-header, #inputBox, #loader {
+            flex-shrink: 0; /* Evita que se compriman */
+        }
         .orb-section .orb-container {
         width: 220px; /* un poco más pequeño para que entre mejor */
         height: 220px;
@@ -290,11 +285,11 @@
         }
         #refreshChat:hover { background: rgba(255,255,255,0.2); }
         #chat {
-            flex: 1;
+            flex: 1; /* Toma el espacio restante dentro de #chatContainer */
             overflow-y: auto;
+            min-height: 0; /* Necesario para que el scroll funcione */
             padding-right: 15px;
             margin-bottom: 20px;
-            min-height: 0;
         }
         .msg {
             margin-bottom: 15px;
