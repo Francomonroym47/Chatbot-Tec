@@ -445,7 +445,8 @@
         // ==================== CONFIGURACIÓN ====================
         const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
         const WORKER_URL = 'https://tts-proxy-tec.emonroy-e51.workers.dev/'; // Tu worker de Cloudflare
-
+        const SURVEY_URL = 'https://qrfy.io/J5FS22pYxw';
+        let surveyTriggered = false; // Evitar múltiples encuestas
         let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
         localStorage.setItem("sessionId", sessionId);
 
@@ -712,57 +713,64 @@
             chat.scrollTop = chat.scrollHeight;
         }
 
-        function agregarMensajeBot(msg) {
-            const chat = document.getElementById("chat");
-            const burbuja = document.createElement("div");
-            burbuja.className = "msg bot";
-            
-            if (/<a\s/i.test(msg)) {
-                burbuja.innerHTML = msg;
-            } else {
-                burbuja.innerHTML = convertirEnlaces(msg);
-            }
-            
-            const time = document.createElement("div");
-            time.className = "msg-time";
-            time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            burbuja.appendChild(time);
-            chat.appendChild(burbuja);
-            chat.scrollTop = chat.scrollHeight;
-        }
+    function agregarMensajeBot(msg) {
+    const chat = document.getElementById("chat");
+    const burbuja = document.createElement("div");
+    burbuja.className = "msg bot";
+    
+    // Si ya tiene etiquetas <a>, las dejamos; si no, convertimos enlaces
+    if (/<a\s/i.test(msg)) {
+        burbuja.innerHTML = msg;
+    } else {
+        burbuja.innerHTML = convertirEnlaces(msg);
+    }
+    
+    const time = document.createElement("div");
+    time.className = "msg-time";
+    time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    burbuja.appendChild(time);
+    chat.appendChild(burbuja);
+    chat.scrollTop = chat.scrollHeight;
+}
 
         function mostrarProcesando(show) {
             document.getElementById("loader").style.display = show ? "block" : "none";
         }
 
-        async function sendMessage() {
-            const input = document.getElementById("messageInput");
-            const message = input.value.trim();
-            if (!message) return;
+    async function sendMessage() {
+    const input = document.getElementById("messageInput");
+    const userMessage = input.value.trim(); // Guardamos el mensaje del usuario
+    if (!userMessage) return;
 
-            agregarMensajeUsuario(message);
-            input.value = "";
-            input.focus();
+    agregarMensajeUsuario(userMessage);
+    input.value = "";
+    input.focus();
 
-            mostrarProcesando(true);
-            updateOrbState(ORB_STATES.THINKING, 'Procesando...');
+    mostrarProcesando(true);
+    updateOrbState(ORB_STATES.THINKING, 'Procesando...');
 
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message, sessionId })
-                });
+    try {
+        const response = await fetch(N8N_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: userMessage, sessionId })
+        });
 
-                if (!response.ok) throw new Error(`Error ${response.status}`);
+        if (!response.ok) throw new Error(`Error ${response.status}`);
 
-                const data = await response.json();
-                const respuesta = data.output || data.message || "Sin respuesta";
+        const data = await response.json();
+        const botResponse = data.output || data.message || "Sin respuesta";
 
-                mostrarProcesando(false);
-                agregarMensajeBot(respuesta);
-                
-                await speakText(respuesta);
+        mostrarProcesando(false);
+        agregarMensajeBot(botResponse);
+        
+        // 🔹 NUEVO: Verificar si la conversación ha terminado
+        checkForConversationEnd(userMessage, data); // Pasamos el mensaje del usuario y los datos completos
+        
+        // Hablar la respuesta (si no es la encuesta)
+        if (!surveyTriggered) {
+            await speakText(botResponse);
+        }
 
             } catch (error) {
                 console.error("Error:", error);
@@ -772,7 +780,57 @@
                 setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
             }
         }
+// ==================== DETECCIÓN DE FINAL DE CONVERSACIÓN Y ENCUESTA ====================
 
+function checkForConversationEnd(userMessage, botResponse) {
+    // Evitar si ya se mostró la encuesta
+    if (surveyTriggered) return false;
+    
+    // 1. Verificar si el backend envió un flag especial (ej: en data.survey)
+    if (botResponse && typeof botResponse === 'object' && botResponse.survey) {
+        showSurveyPrompt();
+        return true;
+    }
+    
+    // 2. Verificar palabras clave en el último mensaje del usuario
+    const lowerMsg = userMessage.toLowerCase();
+    const endPhrases = ['Seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 'finalizar', 'chao', 'bye', 'adios', 'ya pude'];
+    if (endPhrases.some(phrase => lowerMsg.includes(phrase))) {
+        showSurveyPrompt();
+        return true;
+    }
+    
+    return false;
+}
+
+function showSurveyPrompt() {
+    surveyTriggered = true;
+    
+    // Mensaje del bot ofreciendo la encuesta
+    const surveyMessage = `
+        <b>¡Gracias por usar el asistente!</b><br><br>
+        Para ayudarnos a mejorar, te agradeceríamos que respondieras esta breve encuesta:<br><br>
+        <a href="${SURVEY_URL}" target="_blank" id="surveyLink" style="display: inline-block; background: #4DA3FF; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; margin-top: 10px;">📝 Responder encuesta</a>
+        <br><br>
+        <i>Al hacer clic, la página se recargará para una nueva conversación.</i>
+    `;
+    
+    agregarMensajeBot(surveyMessage);
+    
+    // Añadir evento al enlace (como se crea dinámicamente, hay que esperar a que exista)
+    setTimeout(() => {
+        const link = document.getElementById('surveyLink');
+        if (link) {
+            link.addEventListener('click', function(e) {
+                // No prevenir default, queremos que abra el enlace
+                // Pero después de abrirlo, recargamos la página
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500); // Pequeño retraso para asegurar que se abre la pestaña
+            });
+        }
+    }, 100);
+}
         function refrescarChat() {
             document.getElementById("chat").innerHTML = "";
             sessionId = crypto.randomUUID();
