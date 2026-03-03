@@ -5,387 +5,526 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mi Orbe TEC</title>
     <style>
-        /* Estilos base (sin cambios drásticos, solo ajustes) */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.5s ease;
-        }
+/* ==================== ESTILOS BASE ==================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        /* Pantalla inicial: solo el orbe centrado */
-        .initial-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100vh;
-            cursor: pointer;
-            transition: opacity 0.8s ease;
-        }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .initial-screen .orb-container {
-            width: 400px;
-            height: 400px;
-            margin-bottom: 30px;
-            transform: scale(1);
-            transition: transform 0.3s ease;
-        }
+/* ==================== PANTALLA INICIAL ==================== */
+.initial-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100vh;
+    cursor: pointer;
+    transition: opacity 0.8s ease;
+}
 
-        .initial-screen .orb-container:hover {
-            transform: scale(1.05);
-        }
+.initial-screen .orb-container {
+    width: 400px;
+    height: 400px;
+    margin-bottom: 30px;
+    transform: scale(1);
+    transition: transform 0.3s ease;
+}
 
-        .initial-screen .orb-status {
-            font-size: 24px;
-            color: #aaa;
-            text-align: center;
-            animation: pulseText 2s infinite;
-        }
+.initial-screen .orb-container:hover {
+    transform: scale(1.05);
+}
 
-        @keyframes pulseText {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-        .app-container {
-            display: none;
-            width: 100%;
-            height: 100vh; /* Ocupa toda la altura de la ventana */
-            gap: 30px;
-            padding: 20px;
-            opacity: 0;
-            animation: fadeIn 0.8s forwards;
-            flex-wrap: nowrap; /* Evita que se envuelvan en pantallas grandes */
-            align-items: stretch; /* Los hijos se estiran verticalmente */
-        }
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
+.initial-screen .orb-status {
+    font-size: 24px;
+    color: #aaa;
+    text-align: center;
+    animation: pulseText 2s infinite;
+}
 
-        /* Estilos del orbe (igual que antes, pero reutilizables) */
-        .orb-container {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            margin-bottom: 30px;
-        }
+@keyframes pulseText {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
 
-        .orb {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            position: relative;
-            transition: all 0.5s ease;
-        }
+/* ==================== CONTENEDOR PRINCIPAL (oculto inicialmente) ==================== */
+.app-container {
+    display: none;
+    width: 100%;
+    max-width: 1400px; /* opcional, para no estirar demasiado en pantallas grandes */
+    height: 100vh;
+    padding: 20px;
+    gap: 30px;
+    flex-wrap: nowrap;
+    align-items: stretch; /* hijos se estiran verticalmente */
+    opacity: 0;
+    animation: fadeIn 0.8s forwards;
+    margin: 0 auto; /* centrar horizontalmente */
+}
 
-        .orb::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 50%;
-            background: conic-gradient(
-                from 0deg,
-                var(--orb-color-1) 0%,
-                var(--orb-color-2) 25%,
-                var(--orb-color-3) 50%,
-                var(--orb-color-4) 75%,
-                var(--orb-color-1) 100%
-            );
-            filter: blur(20px);
-            opacity: 0.7;
-            animation: rotateOrb 20s linear infinite;
-        }
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
 
-        .orb-inner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 160px;
-            height: 160px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        .orb-section .orb-letter {
-        font-size: 50px;
-        }
+/* ==================== SECCIÓN DEL ORBE (izquierda) ==================== */
+.orb-section {
+    flex: 0 0 320px; /* ancho fijo */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* centra verticalmente el contenido */
+    align-items: center;
+    height: 100%;
+}
 
-        .orb-letter {
-            font-size: 60px;
-            font-weight: 900;
-            color: white;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-            font-family: 'Arial', sans-serif;
-        }
+.orb-section .orb-container {
+    width: 220px;
+    height: 220px;
+    margin-bottom: 15px;
+}
 
-        .orb-pulse {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            animation: pulse 2s ease-in-out infinite;
-        }
+.orb-section .orb-letter {
+    font-size: 50px;
+}
 
-        /* Estados del orbe (igual que antes) */
-        .orb-state-idle {
-            --orb-color-1: #4DA3FF;
-            --orb-color-2: #2a5298;
-            --orb-color-3: #1e3c72;
-            --orb-color-4: #4DA3FF;
-        }
+.orb-controls {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+}
 
-        .orb-state-listening {
-            --orb-color-1: #00ff88;
-            --orb-color-2: #00cc6a;
-            --orb-color-3: #00994c;
-            --orb-color-4: #00ff88;
-            animation: listeningPulse 1.5s ease-in-out infinite !important;
-        }
+.orb-status {
+    font-size: 16px;
+    color: #aaa;
+    margin-bottom: 15px;
+    min-height: 24px;
+}
 
-        .orb-state-thinking {
-            --orb-color-1: #9966ff;
-            --orb-color-2: #7b52cc;
-            --orb-color-3: #5d3f99;
-            --orb-color-4: #9966ff;
-            animation: thinkingSpin 3s linear infinite !important;
-        }
+.listen-btn {
+    padding: 12px 20px; /* ajuste para que quepan dos botones */
+    background: linear-gradient(135deg, #00ff88, #00cc6a);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 14px; /* un poco más pequeño */
+    font-weight: 600;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 5px; /* separación entre botones */
+}
 
-        .orb-state-speaking {
-            --orb-color-1: #ffcc00;
-            --orb-color-2: #ff9900;
-            --orb-color-3: #ff6600;
-            --orb-color-4: #ffcc00;
-            animation: speakingWave 1.2s ease-in-out infinite !important;
-        }
+.listen-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,255,136,0.4);
+}
 
-        .orb-state-confused {
-            --orb-color-1: #ff4444;
-            --orb-color-2: #cc3636;
-            --orb-color-3: #992828;
-            --orb-color-4: #ff4444;
-            animation: confusedShake 0.5s ease-in-out infinite !important;
-        }
+.listen-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.5;
+}
 
-        .orb-state-error {
-            --orb-color-1: #ff3366;
-            --orb-color-2: #cc2952;
-            --orb-color-3: #991f3d;
-            --orb-color-4: #ff3366;
-            animation: errorFlash 1s ease-in-out infinite !important;
-        }
+.timer-display {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #4DA3FF;
+}
 
-        /* Animaciones */
-        @keyframes rotateOrb { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.1); opacity: 0; } }
-        @keyframes listeningPulse { 0%,100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } }
-        @keyframes thinkingSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes speakingWave { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-        @keyframes confusedShake { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
-        @keyframes errorFlash { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+.unsupported-message {
+    font-size: 14px;
+    color: #ffaa00;
+    margin-top: 10px;
+}
 
-        /* Resto de estilos del chat (igual que antes) */
-        .orb-controls { margin-top: 20px; text-align: center; }
-        .orb-status { font-size: 16px; color: #aaa; margin-bottom: 15px; min-height: 24px; }
-        .listen-btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #00ff88, #00cc6a);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 0 auto;
-        }
-        .listen-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,136,0.4); }
-        .listen-btn:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
-        .timer-display { margin-top: 15px; font-size: 14px; color: #4DA3FF; }
-        .orb-section {
-        flex: 0 0 320px; /* Ancho fijo, no se achica */
-        display: flex;
+/* ==================== SECCIÓN DEL CHAT (derecha) ==================== */
+.chat-section {
+    flex: 1; /* ocupa el espacio restante */
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
+    height: 100%;
+}
+
+#chatContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* crucial para el scroll */
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+}
+
+.chat-title h1 {
+    margin: 0;
+    background: linear-gradient(135deg, #4DA3FF, #00ff88);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 28px;
+}
+
+.chat-title p {
+    margin: 5px 0 0;
+    color: #aaa;
+    font-size: 14px;
+}
+
+#refreshChat {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: 0.3s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#refreshChat:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+#chat {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 15px;
+    margin-bottom: 20px;
+}
+
+.msg {
+    margin-bottom: 15px;
+    padding: 15px 20px;
+    border-radius: 15px;
+    max-width: 85%;
+    line-height: 1.5;
+    word-wrap: break-word;
+    animation: fadeIn 0.3s ease;
+    position: relative;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.user {
+    background: linear-gradient(135deg, rgba(77,163,255,0.2), rgba(0,255,136,0.1));
+    margin-left: auto;
+    border-bottom-right-radius: 5px;
+    border-left: 3px solid #4DA3FF;
+}
+
+.bot {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border-bottom-left-radius: 5px;
+    border-right: 3px solid #00ff88;
+}
+
+.msg-time {
+    font-size: 11px;
+    color: #888;
+    margin-top: 5px;
+    text-align: right;
+}
+
+#inputBox {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+#messageInput {
+    flex: 1;
+    padding: 15px 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255,255,255,0.2);
+    outline: none;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+#messageInput:focus {
+    border-color: #00ff88;
+    box-shadow: 0 0 0 3px rgba(0,255,136,0.1);
+}
+
+#sendBtn {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #4DA3FF, #00ff88);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 15px;
+    font-weight: 600;
+    min-width: 100px;
+}
+
+#sendBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(77,163,255,0.4);
+}
+
+#loader {
+    display: none;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #00ff88;
+    border-radius: 50%;
+    animation: typing 1.4s infinite both;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+    30% { transform: translateY(-5px); opacity: 1; }
+}
+
+.timeout-warning {
+    background: rgba(255,68,68,0.1);
+    border: 1px solid rgba(255,68,68,0.3);
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+.timeout-warning span {
+    color: #ff4444;
+    font-size: 14px;
+}
+
+/* ==================== MEDIA QUERIES (móviles) ==================== */
+@media (max-width: 768px) {
+    .app-container {
         flex-direction: column;
-        justify-content: center; /* Centra verticalmente */
-        align-items: center;
-        height: 100%; /* Ocupa toda la altura del contenedor padre */
-        }
-        #chatContainer {
-            flex: 1; /* Crece para llenar la altura disponible */
-            display: flex;
-            flex-direction: column;
-            min-height: 0; /* ¡Importante! Permite que los hijos con scroll funcionen */
-            background: rgba(255,255,255,0.05);
-            border-radius: 20px;
-            padding: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .chat-section {
-            flex: 1; /* Ocupa el espacio restante */
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Ocupa toda la altura */
-            min-width: 400px; /* Evita que se encoja demasiado */
-        }
-        .chat-header, #inputBox, #loader {
-            flex-shrink: 0; /* Evita que se compriman */
-        }
-        .orb-section .orb-container {
-        width: 220px; /* un poco más pequeño para que entre mejor */
-        height: 220px;
-        margin-bottom: 15px;
-        }
-        
-        .chat-title h1 {
-            margin: 0;
-            background: linear-gradient(135deg, #4DA3FF, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
-        }
-        .chat-title p { margin: 5px 0 0; color: #aaa; font-size: 14px; }
-        #refreshChat {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: 0.3s;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #refreshChat:hover { background: rgba(255,255,255,0.2); }
-        #chat {
-            flex: 1; /* Toma el espacio restante dentro de #chatContainer */
-            overflow-y: auto;
-            min-height: 0; /* Necesario para que el scroll funcione */
-            padding-right: 15px;
-            margin-bottom: 20px;
-        }
-        .msg {
-            margin-bottom: 15px;
-            padding: 15px 20px;
-            border-radius: 15px;
-            max-width: 85%;
-            line-height: 1.5;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-            position: relative;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .user {
-            background: linear-gradient(135deg, rgba(77,163,255,0.2), rgba(0,255,136,0.1));
-            margin-left: auto;
-            border-bottom-right-radius: 5px;
-            border-left: 3px solid #4DA3FF;
-        }
-        .bot {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
-            border-bottom-left-radius: 5px;
-            border-right: 3px solid #00ff88;
-        }
-        .msg-time { font-size: 11px; color: #888; margin-top: 5px; text-align: right; }
-        #inputBox {
-            display: flex;
-            gap: 12px;
-            margin-top: auto;
-            position: relative;
-        }
-        #messageInput {
-            flex: 1;
-            padding: 15px 20px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.2);
-            outline: none;
-            background: rgba(255,255,255,0.08);
-            color: white;
-            font-size: 15px;
-            transition: all 0.3s;
-        }
-        #messageInput:focus { border-color: #00ff88; box-shadow: 0 0 0 3px rgba(0,255,136,0.1); }
-        #sendBtn {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #4DA3FF, #00ff88);
-            color: white;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 15px;
-            font-weight: 600;
-            min-width: 100px;
-        }
-        #sendBtn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(77,163,255,0.4); }
-        #loader { display: none; margin-bottom: 20px; }
-        .typing-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-        }
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #00ff88;
-            border-radius: 50%;
-            animation: typing 1.4s infinite both;
-        }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%,60%,100% { transform: translateY(0); opacity: 0.3; }
-            30% { transform: translateY(-5px); opacity: 1; }
-        }
-        .timeout-warning {
-            background: rgba(255,68,68,0.1);
-            border: 1px solid rgba(255,68,68,0.3);
-            border-radius: 10px;
-            padding: 10px 15px;
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            animation: fadeIn 0.3s ease;
-        }
-        .timeout-warning span { color: #ff4444; font-size: 14px; }
-        .unsupported-message { font-size: 14px; color: #ffaa00; margin-top: 10px; }
+        padding: 10px;
+        gap: 15px;
+    }
+    .orb-section {
+        flex: 0 0 auto;
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+    }
+    .chat-section {
+        min-width: 100%;
+        height: auto;
+        flex: 1;
+    }
+    .initial-screen .orb-container {
+        width: 250px;
+        height: 250px;
+    }
+    .orb-section .orb-container {
+        width: 180px;
+        height: 180px;
+    }
+    .listen-btn {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+}
 
-        @media (max-width: 768px) {
-            .app-container { flex-direction: column; }
-            .orb-section, .chat-section { min-width: 100%; }
-            .initial-screen .orb-container { width: 250px; height: 250px; }
-        }
+/* ==================== ESTILOS DEL ORBE (comunes) ==================== */
+.orb {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    transition: all 0.5s ease;
+}
+
+.orb::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        var(--orb-color-1) 0%,
+        var(--orb-color-2) 25%,
+        var(--orb-color-3) 50%,
+        var(--orb-color-4) 75%,
+        var(--orb-color-1) 100%
+    );
+    filter: blur(20px);
+    opacity: 0.7;
+    animation: rotateOrb 20s linear infinite;
+}
+
+.orb-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%; /* relativo al contenedor */
+    height: 60%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.orb-letter {
+    font-size: clamp(30px, 10vw, 60px); /* responsive */
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    font-family: 'Arial', sans-serif;
+}
+
+.orb-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes rotateOrb {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.1); opacity: 0; }
+}
+
+@keyframes listeningPulse {
+    0%,100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+@keyframes thinkingSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes speakingWave {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+@keyframes confusedShake {
+    0%,100% { transform: rotate(0deg); }
+    25% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+}
+
+@keyframes errorFlash {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+/* Estados del orbe */
+.orb-state-idle {
+    --orb-color-1: #4DA3FF;
+    --orb-color-2: #2a5298;
+    --orb-color-3: #1e3c72;
+    --orb-color-4: #4DA3FF;
+}
+.orb-state-listening {
+    --orb-color-1: #00ff88;
+    --orb-color-2: #00cc6a;
+    --orb-color-3: #00994c;
+    --orb-color-4: #00ff88;
+    animation: listeningPulse 1.5s ease-in-out infinite !important;
+}
+.orb-state-thinking {
+    --orb-color-1: #9966ff;
+    --orb-color-2: #7b52cc;
+    --orb-color-3: #5d3f99;
+    --orb-color-4: #9966ff;
+    animation: thinkingSpin 3s linear infinite !important;
+}
+.orb-state-speaking {
+    --orb-color-1: #ffcc00;
+    --orb-color-2: #ff9900;
+    --orb-color-3: #ff6600;
+    --orb-color-4: #ffcc00;
+    animation: speakingWave 1.2s ease-in-out infinite !important;
+}
+.orb-state-confused {
+    --orb-color-1: #ff4444;
+    --orb-color-2: #cc3636;
+    --orb-color-3: #992828;
+    --orb-color-4: #ff4444;
+    animation: confusedShake 0.5s ease-in-out infinite !important;
+}
+.orb-state-error {
+    --orb-color-1: #ff3366;
+    --orb-color-2: #cc2952;
+    --orb-color-3: #991f3d;
+    --orb-color-4: #ff3366;
+    animation: errorFlash 1s ease-in-out infinite !important;
+}
     </style>
 </head>
 <body>
