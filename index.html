@@ -401,15 +401,19 @@
                 </div>
             </div>
             
-            <div class="orb-controls">
-                <div class="orb-status" id="orbStatus">En espera</div>
-                <button class="listen-btn" id="listenBtn">
-                    <span>🎤</span> Abrir Micrófono
-                </button>
-                <div class="timer-display" id="timerDisplay"></div>
-                <div id="voiceSupportMessage" class="unsupported-message"></div>
-            </div>
-        </div>
+         <div class="orb-controls">
+    <div class="orb-status" id="orbStatus">En espera</div>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="listen-btn" id="listenBtn">
+            <span>🎤</span> Abrir Micrófono
+        </button>
+        <button class="listen-btn" id="stopSpeechBtn" style="background: #ff4444;" title="Detener voz">
+            <span>🔇</span> Detener Voz
+        </button>
+    </div>
+    <div class="timer-display" id="timerDisplay"></div>
+    <div id="voiceSupportMessage" class="unsupported-message"></div>
+</div>
 
         <!-- SECCIÓN CHAT -->
         <div class="chat-section">
@@ -440,452 +444,484 @@
             </div>
         </div>
     </div>
+<script>
+    // ==================== CONFIGURACIÓN ====================
+    const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
+    const WORKER_URL = 'https://tecbot.emonroy-e51.workers.dev/';
+    const SURVEY_URL = 'https://qrfy.io/J5FS22pYxw';
+    let surveyTriggered = false;
+    let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
+    let surveyTimeout;
+    let surveyTimerInterval;
+    localStorage.setItem("sessionId", sessionId);
 
-    <script>
-        // ==================== CONFIGURACIÓN ====================
-        const N8N_WEBHOOK_URL = "https://n8n.srv1161635.hstgr.cloud/webhook/6b4f38ff-0de0-49f0-843f-a277a55bdfd5";
-        const WORKER_URL = 'https://tecbot.emonroy-e51.workers.dev/'; // Tu worker de Cloudflare
-        const SURVEY_URL = 'https://qrfy.io/J5FS22pYxw';
-        let surveyTriggered = false; // Evitar múltiples encuestas
-        let sessionId = localStorage.getItem("sessionId") || crypto.randomUUID();
-        localStorage.setItem("sessionId", sessionId);
+    // ==================== ESTADOS DEL ORBE ====================
+    const ORB_STATES = { IDLE: 'idle', LISTENING: 'listening', THINKING: 'thinking', SPEAKING: 'speaking', CONFUSED: 'confused', ERROR: 'error' };
+    let currentOrbState = ORB_STATES.IDLE;
+    let listenTimeout = null;
+    let listenTimer = null;
+    let listenTimeLeft = 15;
+    let isListening = false;
+    let currentAudio = null;
 
-        // ==================== ESTADOS DEL ORBE ====================
-        const ORB_STATES = {
-            IDLE: 'idle',
-            LISTENING: 'listening',
-            THINKING: 'thinking',
-            SPEAKING: 'speaking',
-            CONFUSED: 'confused',
-            ERROR: 'error'
+    // Variables para elementos DOM (se asignarán en DOMContentLoaded)
+    let initialScreen, appContainer, orb, orbStatus, listenBtn, timerDisplay, voiceSupportMessage;
+
+    // ==================== DETECCIÓN DE RECONOCIMIENTO DE VOZ ====================
+    const speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+
+    // ==================== RECONOCIMIENTO DE VOZ ====================
+    let recognition = null;
+    if (speechRecognitionSupported) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'es-ES';
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            isListening = true;
+            updateOrbState(ORB_STATES.LISTENING, 'Escuchando... Habla ahora');
+            listenBtn.disabled = true;
+            listenBtn.innerHTML = '<span>⏸️</span> Escuchando...';
+            startListenTimer();
         };
 
-        let currentOrbState = ORB_STATES.IDLE;
-        let listenTimeout = null;
-        let listenTimer = null;
-        let listenTimeLeft = 30;
-        let isListening = false;
-        let currentAudio = null;
-
-        // Elementos DOM
-        const initialScreen = document.getElementById('initialScreen');
-        const appContainer = document.getElementById('appContainer');
-        const orb = document.getElementById('orb');
-        const orbStatus = document.getElementById('orbStatus');
-        const listenBtn = document.getElementById('listenBtn');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const voiceSupportMessage = document.getElementById('voiceSupportMessage');
-
-        // ==================== DETECCIÓN DE RECONOCIMIENTO DE VOZ ====================
-        const speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-        if (!speechRecognitionSupported) {
-            listenBtn.disabled = true;
-            listenBtn.title = 'Reconocimiento de voz no disponible en este navegador';
-            voiceSupportMessage.textContent = '🔇 El reconocimiento de voz no está disponible. Usa Chrome/Edge para hablar.';
-        }
-
-        // ==================== RECONOCIMIENTO DE VOZ ====================
-        let recognition = null;
-        if (speechRecognitionSupported) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'es-ES';
-            recognition.maxAlternatives = 1;
-
-            recognition.onstart = () => {
-                isListening = true;
-                updateOrbState(ORB_STATES.LISTENING, 'Escuchando... Habla ahora');
-                listenBtn.disabled = true;
-                listenBtn.innerHTML = '<span>⏸️</span> Escuchando...';
-                startListenTimer();
-            };
-
-            recognition.onresult = (event) => {
-                const lastResult = event.results[event.results.length - 1];
-                const transcript = lastResult[0].transcript;
-                
-                if (lastResult.isFinal) {
-                    console.log('Texto reconocido (final):', transcript);
-                    stopListening();
-                    document.getElementById('messageInput').value = transcript;
-                    sendMessage();
-                } else {
-                    orbStatus.textContent = `Escuchando: "${transcript}"`;
-                }
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Error de reconocimiento:', event.error);
+        recognition.onresult = (event) => {
+            const lastResult = event.results[event.results.length - 1];
+            const transcript = lastResult[0].transcript;
+            if (lastResult.isFinal) {
+                console.log('Texto reconocido (final):', transcript);
                 stopListening();
-                let message = '';
-                switch(event.error) {
-                    case 'not-allowed': message = 'Permiso de micrófono denegado'; break;
-                    case 'no-speech': message = 'No se detectó voz'; break;
-                    case 'network': message = 'Error de red'; break;
-                    default: message = 'Error al escuchar';
-                }
-                updateOrbState(ORB_STATES.CONFUSED, message);
-                setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
-            };
-
-            recognition.onend = () => {
-                if (isListening) stopListening();
-            };
-        }
-
-        // Funciones de control de escucha
-        function startListening() {
-            if (!recognition) {
-                alert('Reconocimiento de voz no disponible en este navegador');
-                return;
+                document.getElementById('messageInput').value = transcript;
+                sendMessage();
+            } else {
+                orbStatus.textContent = `Escuchando: "${transcript}"`;
             }
-            if (isListening) return;
-            try {
-                recognition.start();
-            } catch (error) {
-                console.error('Error al iniciar reconocimiento:', error);
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Error de reconocimiento:', event.error);
+            stopListening();
+            let message = '';
+            switch(event.error) {
+                case 'not-allowed': message = 'Permiso de micrófono denegado'; break;
+                case 'no-speech': message = 'No se detectó voz'; break;
+                case 'network': message = 'Error de red'; break;
+                default: message = 'Error al escuchar';
             }
-        }
+            updateOrbState(ORB_STATES.CONFUSED, message);
+            setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
+        };
 
-        function stopListening() {
-            if (!isListening) return;
-            isListening = false;
-            if (recognition) recognition.stop();
-            clearInterval(listenTimer);
-            clearTimeout(listenTimeout);
-            listenBtn.disabled = false;
-            listenBtn.innerHTML = '<span>🎤</span> Abrir Micrófono';
-            timerDisplay.textContent = '';
-        }
+        recognition.onend = () => {
+            if (isListening) stopListening();
+        };
+    }
 
-        function startListenTimer() {
-            listenTimeLeft = 30;
+    // ==================== FUNCIONES DE ESCUCHA ====================
+    function startListening() {
+        if (!recognition) {
+            alert('Reconocimiento de voz no disponible en este navegador');
+            return;
+        }
+        if (isListening) return;
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('Error al iniciar reconocimiento:', error);
+        }
+    }
+
+    function stopListening() {
+        if (!isListening) return;
+        isListening = false;
+        if (recognition) recognition.stop();
+        clearInterval(listenTimer);
+        clearTimeout(listenTimeout);
+        listenBtn.disabled = false;
+        listenBtn.innerHTML = '<span>🎤</span> Abrir Micrófono';
+        timerDisplay.textContent = '';
+    }
+
+    function startListenTimer() {
+        listenTimeLeft = 15;
+        updateTimerDisplay();
+        listenTimer = setInterval(() => {
+            listenTimeLeft--;
             updateTimerDisplay();
-            listenTimer = setInterval(() => {
-                listenTimeLeft--;
-                updateTimerDisplay();
-                if (listenTimeLeft <= 0) {
-                    stopListening();
-                    showTimeoutWarning();
-                }
-            }, 1000);
-            listenTimeout = setTimeout(() => {
+            if (listenTimeLeft <= 0) {
                 stopListening();
                 showTimeoutWarning();
-            }, 30000);
-        }
-
-        function updateTimerDisplay() {
-            if (isListening) {
-                timerDisplay.textContent = `Tiempo restante: ${listenTimeLeft}s`;
-                timerDisplay.style.color = listenTimeLeft <= 10 ? '#ff4444' : listenTimeLeft <= 20 ? '#ffcc00' : '#4DA3FF';
-            } else {
-                timerDisplay.textContent = '';
             }
+        }, 1000);
+        listenTimeout = setTimeout(() => {
+            stopListening();
+            showTimeoutWarning();
+        }, 15000); // CORREGIDO: antes estaba en 30000
+    }
+
+    function updateTimerDisplay() {
+        if (isListening) {
+            timerDisplay.textContent = `Tiempo restante: ${listenTimeLeft}s`;
+            timerDisplay.style.color = listenTimeLeft <= 10 ? '#ff4444' : listenTimeLeft <= 20 ? '#ffcc00' : '#4DA3FF';
+        } else {
+            timerDisplay.textContent = '';
         }
+    }
 
-        function showTimeoutWarning() {
-            updateOrbState(ORB_STATES.CONFUSED, 'Tiempo agotado. ¿Quieres intentar de nuevo?');
-            const warning = document.createElement('div');
-            warning.className = 'timeout-warning';
-            warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Abrir Micrófono" o escribe tu mensaje.</span>`;
-            document.getElementById('chat').appendChild(warning);
-            setTimeout(() => warning.remove(), 5000);
+    function showTimeoutWarning() {
+        updateOrbState(ORB_STATES.CONFUSED, 'Tiempo agotado. ¿Quieres intentar de nuevo?');
+        const warning = document.createElement('div');
+        warning.className = 'timeout-warning';
+        warning.innerHTML = `<span>⚠️</span><span>El tiempo de escucha ha terminado. Haz clic en "Abrir Micrófono" o escribe tu mensaje.</span>`;
+        document.getElementById('chat').appendChild(warning);
+        setTimeout(() => warning.remove(), 5000);
+    }
+
+    // ==================== DETENER VOZ ====================
+    function stopSpeech() {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
         }
-
-        // ==================== SÍNTESIS DE VOZ (proxy vía Worker) ====================
-        function limpiarTextoParaVoz(texto) {
-            return texto.replace(/\bhttps?:\/\/[^\s]+/g, 'enlace');
+        if (window.speechSynthesis && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
         }
+        updateOrbState(ORB_STATES.IDLE, 'Voz detenida');
+    }
 
-        async function speakText(text) {
-            console.log('🎤 speakText iniciado con texto:', text);
-            
-            if (!text || text.trim() === '') return;
-
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = text;
-            let cleanText = tempDiv.textContent || tempDiv.innerText || "";
-            cleanText = limpiarTextoParaVoz(cleanText);
-
-            updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
-
-            try {
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        input: { text: cleanText }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Error del proxy: ${response.status} - ${errorData.error || ''}`);
-                }
-
-                const data = await response.json();
-                
-                if (!data.audioContent) {
-                    throw new Error('No se recibió audioContent');
-                }
-
-                const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
-                
-                audio.onplay = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
-                audio.onended = () => {
-                    updateOrbState(ORB_STATES.IDLE);
-                    currentAudio = null;
-                };
-                
-                audio.onerror = (e) => {
-                    console.error('Error en reproducción:', e);
-                    updateOrbState(ORB_STATES.ERROR, 'Error al reproducir');
-                    setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
-                    fallbackSpeak(cleanText);
-                };
-
-                currentAudio = audio;
-                await audio.play();
-
-            } catch (error) {
-                console.error('Error en speakText:', error);
-                updateOrbState(ORB_STATES.ERROR, 'Error en voz');
-                fallbackSpeak(cleanText);
+    // ==================== FUNCIONES DE ENCUESTA ====================
+    function openSurvey() {
+        const modal = document.getElementById('surveyModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        
+        let timeLeft = 120;
+        const timerSpan = document.getElementById('surveyTimer');
+        
+        surveyTimerInterval = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            if (timeLeft <= 0) {
+                closeSurvey();
             }
-        }
+        }, 1000);
+        
+        surveyTimeout = setTimeout(() => {
+            closeSurvey();
+        }, 120000);
+    }
 
-        function fallbackSpeak(text) {
-            console.log('⚠️ Usando fallback de voz nativa');
-            if (!window.speechSynthesis) return;
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'es-ES';
-            utterance.onstart = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando (voz local)...');
-            utterance.onend = () => updateOrbState(ORB_STATES.IDLE);
-            utterance.onerror = (e) => console.error('Error en fallback:', e);
-            window.speechSynthesis.speak(utterance);
-        }
+    function closeSurvey() {
+        const modal = document.getElementById('surveyModal');
+        if (modal) modal.style.display = 'none';
+        clearInterval(surveyTimerInterval);
+        clearTimeout(surveyTimeout);
+        refrescarChat(); // Reinicia el chat al cerrar la encuesta
+    }
 
-        // ==================== FUNCIONES DEL ORBE ====================
-        function updateOrbState(state, message = '') {
-            currentOrbState = state;
-            orb.className = 'orb';
-            orb.classList.add(`orb-state-${state}`);
+    // ==================== SÍNTESIS DE VOZ ====================
+    function limpiarTextoParaVoz(texto) {
+        return texto.replace(/\bhttps?:\/\/[^\s]+/g, 'enlace');
+    }
+
+    async function speakText(text) {
+        console.log('🎤 speakText iniciado con texto:', text);
+        if (!text || text.trim() === '') return;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = text;
+        let cleanText = tempDiv.textContent || tempDiv.innerText || "";
+        cleanText = limpiarTextoParaVoz(cleanText);
+
+        updateOrbState(ORB_STATES.SPEAKING, 'Generando audio...');
+
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: { text: cleanText } })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Error del proxy: ${response.status} - ${errorData.error || ''}`);
+            }
+
+            const data = await response.json();
+            if (!data.audioContent) throw new Error('No se recibió audioContent');
+
+            const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
             
-            const statusMessages = {
-                idle: 'En espera',
-                listening: 'Escuchando...',
-                thinking: 'Pensando...',
-                speaking: 'Hablando...',
-                confused: 'No entendí eso',
-                error: 'Error de conexión'
+            audio.onplay = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando...');
+            audio.onended = () => {
+                updateOrbState(ORB_STATES.IDLE);
+                currentAudio = null;
             };
-            orbStatus.textContent = message || statusMessages[state];
-            console.log('Orbe:', state);
-        }
+            audio.onerror = (e) => {
+                console.error('Error en reproducción:', e);
+                updateOrbState(ORB_STATES.ERROR, 'Error al reproducir');
+                setTimeout(() => updateOrbState(ORB_STATES.IDLE), 2000);
+                fallbackSpeak(cleanText);
+            };
 
-        // ==================== FUNCIONES DEL CHAT ====================
-        function convertirEnlaces(texto) {
-            if (!texto) return "";
-            texto = texto.replace(
-                /\[([^\]]+)\]\(([^)]+)\)/g,
-                '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
-            );
-            texto = texto.replace(
-                /\b(https?:\/\/[^\s<]+)/g,
-                '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
-            );
-            return texto;
-        }
+            currentAudio = audio;
+            await audio.play();
 
-        function agregarMensajeUsuario(msg) {
-            const chat = document.getElementById("chat");
-            const burbuja = document.createElement("div");
-            burbuja.className = "msg user";
-            burbuja.innerHTML = msg;
-            const time = document.createElement("div");
-            time.className = "msg-time";
-            time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            burbuja.appendChild(time);
-            chat.appendChild(burbuja);
-            chat.scrollTop = chat.scrollHeight;
+        } catch (error) {
+            console.error('Error en speakText:', error);
+            updateOrbState(ORB_STATES.ERROR, 'Error en voz');
+            fallbackSpeak(cleanText);
         }
+    }
+
+    function fallbackSpeak(text) {
+        console.log('⚠️ Usando fallback de voz nativa');
+        if (!window.speechSynthesis) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'es-ES';
+        utterance.onstart = () => updateOrbState(ORB_STATES.SPEAKING, 'Hablando (voz local)...');
+        utterance.onend = () => updateOrbState(ORB_STATES.IDLE);
+        utterance.onerror = (e) => console.error('Error en fallback:', e);
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // ==================== FUNCIONES DEL ORBE ====================
+    function updateOrbState(state, message = '') {
+        if (!orb) return; // Por si aún no se ha asignado
+        currentOrbState = state;
+        orb.className = 'orb';
+        orb.classList.add(`orb-state-${state}`);
+        
+        const statusMessages = {
+            idle: 'En espera',
+            listening: 'Escuchando...',
+            thinking: 'Pensando...',
+            speaking: 'Hablando...',
+            confused: 'No entendí eso',
+            error: 'Error de conexión'
+        };
+        orbStatus.textContent = message || statusMessages[state];
+        console.log('Orbe:', state);
+    }
+
+    // ==================== FUNCIONES DEL CHAT ====================
+    function convertirEnlaces(texto) {
+        if (!texto) return "";
+        texto = texto.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>');
+        texto = texto.replace(/\b(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>');
+        return texto;
+    }
+
+    function agregarMensajeUsuario(msg) {
+        const chat = document.getElementById("chat");
+        const burbuja = document.createElement("div");
+        burbuja.className = "msg user";
+        burbuja.innerHTML = msg;
+        const time = document.createElement("div");
+        time.className = "msg-time";
+        time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        burbuja.appendChild(time);
+        chat.appendChild(burbuja);
+        chat.scrollTop = chat.scrollHeight;
+    }
 
     function agregarMensajeBot(msg) {
-    const chat = document.getElementById("chat");
-    const burbuja = document.createElement("div");
-    burbuja.className = "msg bot";
-    
-    // Si ya tiene etiquetas <a>, las dejamos; si no, convertimos enlaces
-    if (/<a\s/i.test(msg)) {
-        burbuja.innerHTML = msg;
-    } else {
-        burbuja.innerHTML = convertirEnlaces(msg);
-    }
-    
-    const time = document.createElement("div");
-    time.className = "msg-time";
-    time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    burbuja.appendChild(time);
-    chat.appendChild(burbuja);
-    chat.scrollTop = chat.scrollHeight;
-}
-
-        function mostrarProcesando(show) {
-            document.getElementById("loader").style.display = show ? "block" : "none";
+        const chat = document.getElementById("chat");
+        const burbuja = document.createElement("div");
+        burbuja.className = "msg bot";
+        
+        if (/<a\s/i.test(msg)) {
+            burbuja.innerHTML = msg;
+        } else {
+            burbuja.innerHTML = convertirEnlaces(msg);
         }
+        
+        const time = document.createElement("div");
+        time.className = "msg-time";
+        time.textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        burbuja.appendChild(time);
+        chat.appendChild(burbuja);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function mostrarProcesando(show) {
+        document.getElementById("loader").style.display = show ? "block" : "none";
+    }
 
     async function sendMessage() {
-    const input = document.getElementById("messageInput");
-    const userMessage = input.value.trim(); // Guardamos el mensaje del usuario
-    if (!userMessage) return;
+        const input = document.getElementById("messageInput");
+        const userMessage = input.value.trim();
+        if (!userMessage) return;
 
-    agregarMensajeUsuario(userMessage);
-    input.value = "";
-    input.focus();
+        agregarMensajeUsuario(userMessage);
+        input.value = "";
+        input.focus();
 
-    mostrarProcesando(true);
-    updateOrbState(ORB_STATES.THINKING, 'Procesando...');
+        mostrarProcesando(true);
+        updateOrbState(ORB_STATES.THINKING, 'Procesando...');
 
-    try {
-        const response = await fetch(N8N_WEBHOOK_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: userMessage, sessionId })
-        });
-
-        if (!response.ok) throw new Error(`Error ${response.status}`);
-
-        const data = await response.json();
-        const botResponse = data.output || data.message || "Sin respuesta";
-
-        mostrarProcesando(false);
-        agregarMensajeBot(botResponse);
-        
-        // 🔹 NUEVO: Verificar si la conversación ha terminado
-        checkForConversationEnd(userMessage, data); // Pasamos el mensaje del usuario y los datos completos
-        
-        // Hablar la respuesta (si no es la encuesta)
-        if (!surveyTriggered) {
-            await speakText(botResponse);
-        }
-
-            } catch (error) {
-                console.error("Error:", error);
-                mostrarProcesando(false);
-                updateOrbState(ORB_STATES.ERROR, 'Error de conexión');
-                agregarMensajeBot(`⚠️ Error al conectar con el servidor<br><small>${error.message}</small>`);
-                setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
-            }
-        }
-// ==================== DETECCIÓN DE FINAL DE CONVERSACIÓN Y ENCUESTA ====================
-
-function checkForConversationEnd(userMessage, botResponse) {
-    // Evitar si ya se mostró la encuesta
-    if (surveyTriggered) return false;
-    
-    // 1. Verificar si el backend envió un flag especial (ej: en data.survey)
-    if (botResponse && typeof botResponse === 'object' && botResponse.survey) {
-        showSurveyPrompt();
-        return true;
-    }
-    
-    // 2. Verificar palabras clave en el último mensaje del usuario
-    const lowerMsg = userMessage.toLowerCase();
-    const endPhrases = ['Seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 'finalizar', 'chao', 'bye', 'adios', 'ya pude', 'Muchas Gracias','sayonara'];
-    if (endPhrases.some(phrase => lowerMsg.includes(phrase))) {
-        showSurveyPrompt();
-        return true;
-    }
-    
-    return false;
-}
-
-function showSurveyPrompt() {
-    surveyTriggered = true;
-    
-    // Mensaje del bot ofreciendo la encuesta
-    const surveyMessage = `
-        <b>¡Gracias por usar el asistente!</b><br><br>
-        Para ayudarnos a mejorar, te agradeceríamos que respondieras esta breve encuesta:<br><br>
-        <a href="${SURVEY_URL}" target="_blank" id="surveyLink" style="display: inline-block; background: #4DA3FF; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; margin-top: 10px;">📝 Responder encuesta</a>
-        <br><br>
-        <i>Al hacer clic, la página se recargará para una nueva conversación.</i>
-    `;
-    
-    agregarMensajeBot(surveyMessage);
-    
-    // Añadir evento al enlace (como se crea dinámicamente, hay que esperar a que exista)
-    setTimeout(() => {
-        const link = document.getElementById('surveyLink');
-        if (link) {
-            link.addEventListener('click', function(e) {
-                // No prevenir default, queremos que abra el enlace
-                // Pero después de abrirlo, recargamos la página
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500); // Pequeño retraso para asegurar que se abre la pestaña
+        try {
+            const response = await fetch(N8N_WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage, sessionId })
             });
-        }
-    }, 100);
-}
-        function refrescarChat() {
-            document.getElementById("chat").innerHTML = "";
-            sessionId = crypto.randomUUID();
-            localStorage.setItem("sessionId", sessionId);
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio = null;
-            }
-            stopListening();
-            updateOrbState(ORB_STATES.IDLE, 'Chat reiniciado');
-            agregarMensajeBot(`<b>¡Chat reiniciado! 🔄</b><br>¿En qué puedo ayudarte ahora?`);
-        }
 
-        // ==================== INICIALIZACIÓN Y EVENTOS ====================
-        function iniciarAplicacion() {
-            // Ocultar pantalla inicial y mostrar contenedor principal
-            initialScreen.style.display = 'none';
-            appContainer.style.display = 'flex';
+            if (!response.ok) throw new Error(`Error ${response.status}`);
 
-            // Mostrar mensaje de bienvenida en el chat
-            agregarMensajeBot(`
-                <b>¡Hola! soy tu Orbe TEC.</b><br>
-                Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Abrir Micrófono" para hablarme.<br><br>
-                ¿En qué puedo ayudarte hoy?
-            `);
+            const data = await response.json();
+            const botResponse = data.output || data.message || "Sin respuesta";
 
-            // Reproducir mensaje de bienvenida con TTS
-            const mensajeVoz = `¡Hola! soy tu Orbe TEC. Puedes escribirme o hacer clic en Abrir Micrófono para hablarme. ¿En qué puedo ayudarte hoy?`;
-            speakText(mensajeVoz);
-        }
-
-        // Evento de clic en la pantalla inicial
-        initialScreen.addEventListener('click', function onClick() {
-            iniciarAplicacion();
-            initialScreen.removeEventListener('click', onClick);
-        });
-
-        // Configurar event listeners para los elementos del chat (solo se ejecutarán cuando existan)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Los event listeners se asignan aquí pero los elementos pueden no estar visibles aún
-            // Sin embargo, al hacer clic en la pantalla inicial, se mostrarán y funcionarán
-            document.getElementById("sendBtn").addEventListener("click", sendMessage);
-            document.getElementById("messageInput").addEventListener("keypress", (e) => {
-                if (e.key === "Enter") sendMessage();
-            });
-            document.getElementById("refreshChat").addEventListener("click", refrescarChat);
+            mostrarProcesando(false);
+            agregarMensajeBot(botResponse);
             
-            if (speechRecognitionSupported) {
-                listenBtn.addEventListener("click", startListening);
-            }
+            checkForConversationEnd(userMessage, data);
             
-            document.getElementById("messageInput").addEventListener("input", () => {
-                if (isListening) stopListening();
+            if (!surveyTriggered) {
+                await speakText(botResponse);
+            }
+
+        } catch (error) {
+            console.error("Error:", error);
+            mostrarProcesando(false);
+            updateOrbState(ORB_STATES.ERROR, 'Error de conexión');
+            agregarMensajeBot(`⚠️ Error al conectar con el servidor<br><small>${error.message}</small>`);
+            setTimeout(() => updateOrbState(ORB_STATES.IDLE), 3000);
+        }
+    }
+
+    // ==================== DETECCIÓN DE FINAL DE CONVERSACIÓN ====================
+    function checkForConversationEnd(userMessage, responseData) {
+        if (surveyTriggered) return false;
+        
+        if (responseData && responseData.survey === true) {
+            showSurveyPrompt();
+            return true;
+        }
+        const lowerMsg = userMessage.toLowerCase();
+        const endPhrases = [
+            'seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 
+            'finalizar', 'chao', 'bye', 'adios', 'ya pude', 'muchas gracias',
+            'sayonara', 'gracias', 'me voy', 'hasta luego'
+        ];
+        if (endPhrases.some(phrase => lowerMsg.includes(phrase))) {
+            showSurveyPrompt();
+            return true;
+        }
+        return false;
+    }
+
+    function showSurveyPrompt() {
+        surveyTriggered = true;
+        const surveyMessage = `
+            <b>¡Gracias por usar el asistente!</b><br><br>
+            Para ayudarnos a mejorar, te agradeceríamos que respondieras esta breve encuesta:<br><br>
+        `;
+        agregarMensajeBot(surveyMessage);
+        openSurvey();
+    }
+
+    function refrescarChat() {
+        document.getElementById("chat").innerHTML = "";
+        sessionId = crypto.randomUUID();
+        localStorage.setItem("sessionId", sessionId);
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        stopListening();
+        updateOrbState(ORB_STATES.IDLE, 'Chat reiniciado');
+        agregarMensajeBot(`<b>¡Chat reiniciado! 🔄</b><br>¿En qué puedo ayudarte ahora?`);
+    }
+
+    // ==================== INICIALIZACIÓN ====================
+    function iniciarAplicacion() {
+        initialScreen.style.display = 'none';
+        appContainer.style.display = 'flex';
+        surveyTriggered = false;
+        agregarMensajeBot(`
+            <b>¡Hola! soy tu Orbe TEC.</b><br>
+            Puedes escribirme o, si usas Chrome/Edge, hacer clic en "Abrir Micrófono" para hablarme.<br><br>
+            ¿En qué puedo ayudarte hoy?
+        `);
+        const mensajeVoz = `¡Hola! soy tu Orbe TEC. Puedes escribirme o hacer clic en Abrir Micrófono para hablarme. ¿En qué puedo ayudarte hoy?`;
+        speakText(mensajeVoz);
+    }
+
+    // ==================== EVENTOS ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asignar referencias DOM
+        initialScreen = document.getElementById('initialScreen');
+        appContainer = document.getElementById('appContainer');
+        orb = document.getElementById('orb');
+        orbStatus = document.getElementById('orbStatus');
+        listenBtn = document.getElementById('listenBtn');
+        timerDisplay = document.getElementById('timerDisplay');
+        voiceSupportMessage = document.getElementById('voiceSupportMessage');
+
+        // Botón de micrófono
+        if (speechRecognitionSupported) {
+            listenBtn.addEventListener('click', startListening);
+        } else {
+            listenBtn.disabled = true;
+            listenBtn.title = 'Reconocimiento de voz no disponible en este navegador';
+            if (voiceSupportMessage) {
+                voiceSupportMessage.textContent = '🔇 El reconocimiento de voz no está disponible. Usa Chrome/Edge para hablar.';
+            }
+        }
+
+        // Botón de detener voz
+        const stopSpeechBtn = document.getElementById('stopSpeechBtn');
+        if (stopSpeechBtn) {
+            stopSpeechBtn.addEventListener('click', stopSpeech);
+        }
+
+        // Botón de cerrar encuesta
+        const closeSurveyBtn = document.getElementById('closeSurveyBtn');
+        if (closeSurveyBtn) {
+            closeSurveyBtn.addEventListener('click', closeSurvey);
+        }
+
+        // Clic fuera del modal para cerrar
+        const modal = document.getElementById('surveyModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeSurvey();
             });
+        }
+
+        // Eventos del chat
+        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        document.getElementById("messageInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
         });
-    </script>
+        document.getElementById("refreshChat").addEventListener("click", refrescarChat);
+        document.getElementById("messageInput").addEventListener("input", () => {
+            if (isListening) stopListening();
+        });
+
+        // Evento de clic en pantalla inicial
+        if (initialScreen) {
+            initialScreen.addEventListener('click', function onClick() {
+                iniciarAplicacion();
+                initialScreen.removeEventListener('click', onClick);
+            });
+        }
+    });
+</script>
+
+    <!-- Modal de encuesta -->
+<div id="surveyModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: #1a1a2e; padding: 20px; border-radius: 20px; width: 90%; max-width: 500px; position: relative;">
+        <button id="closeSurveyBtn" style="position: absolute; top: 10px; right: 15px; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+        <iframe src="https://qrfy.io/J5FS22pYxw" style="width: 100%; height: 400px; border: none; border-radius: 10px;"></iframe>
+        <div style="text-align: center; margin-top: 10px; color: #aaa;">La encuesta se cerrará automáticamente en <span id="surveyTimer">2:00</span></div>
+    </div>
+</div>
 </body>
 </html>
