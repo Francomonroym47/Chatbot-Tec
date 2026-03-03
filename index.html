@@ -60,17 +60,18 @@
         }
 
         /* Contenedor principal (oculto inicialmente) */
-        .app-container {
-        display: none; /* Se mantiene oculto hasta el clic */
-        max-width: 1200px;
-        width: 100%;
-        height: calc(100vh - 40px); /* Ocupa casi toda la pantalla, restando padding */
-        gap: 30px;
-        flex-wrap: wrap;
-        padding: 20px;
-        opacity: 0;
-        animation: fadeIn 0.8s forwards;
-        align-items: stretch; /* Para que los hijos se estiren verticalmente */
+          .app-container {
+            display: none; /* se mantiene oculto hasta el clic */
+            max-width: 1400px; /* más ancho para aprovechar pantallas grandes */
+            width: 100%;
+            height: calc(100vh - 40px); /* casi toda la altura menos padding */
+            gap: 20px;
+            padding: 20px;
+            opacity: 0;
+            animation: fadeIn 0.8s forwards;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch; /* ambos ocupan el mismo alto */
         }
 
         @keyframes fadeIn {
@@ -129,6 +130,9 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
+        }
+        .orb-section .orb-letter {
+        font-size: 50px;
         }
 
         .orb-letter {
@@ -228,33 +232,41 @@
         .listen-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,136,0.4); }
         .listen-btn:disabled { background: #666; cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.5; }
         .timer-display { margin-top: 15px; font-size: 14px; color: #4DA3FF; }
-
+        
         .orb-section {
-            flex: 0 0 320px; /* Ancho fijo, no crece */
+            flex: 0 0 300px; /* ancho fijo de 300px */
             display: flex;
             flex-direction: column;
-            justify-content: center; /* Centra verticalmente el contenido del orbe */
+            justify-content: center; /* centra verticalmente el contenido */
             align-items: center;
+            background: rgba(255, 255, 255, 0.03); /* ligero fondo para separar visualmente */
+            border-radius: 20px;
+            padding: 20px;
         }
         #chatContainer {
-        flex: 1; /* Ocupa el espacio restante */
-        background: rgba(255,255,255,0.05);
-        border-radius: 20px;
-        padding: 30px;
-        display: flex;
-        flex-direction: column;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
-        min-height: 0; /* Importante para flexbox */
-        }
-        .chat-header {
+            flex: 1; /* ocupa todo el alto disponible */
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.1);
+            min-height: 0; /* necesario para que flex funcione */
         }
+        .chat-section {
+            flex: 1; /* ocupa el resto del espacio */
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* evita que se desborde */
+        }
+        .chat-header, #inputBox {
+        flex-shrink: 0;}
+        .orb-section .orb-container {
+        width: 220px; /* un poco más pequeño para que entre mejor */
+        height: 220px;
+        margin-bottom: 15px;
+        }
+        
         .chat-title h1 {
             margin: 0;
             background: linear-gradient(135deg, #4DA3FF, #00ff88);
@@ -278,11 +290,11 @@
         }
         #refreshChat:hover { background: rgba(255,255,255,0.2); }
         #chat {
-            flex: 1; /* Crece para llenar el espacio */
+            flex: 1;
             overflow-y: auto;
             padding-right: 15px;
             margin-bottom: 20px;
-            min-height: 0; /* Necesario para que flex funcione */
+            min-height: 0;
         }
         .msg {
             margin-bottom: 15px;
