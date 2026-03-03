@@ -794,7 +794,7 @@ function checkForConversationEnd(userMessage, botResponse) {
     
     // 2. Verificar palabras clave en el último mensaje del usuario
     const lowerMsg = userMessage.toLowerCase();
-    const endPhrases = ['Seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 'finalizar', 'chao', 'bye', 'adios', 'ya pude'];
+    const endPhrases = ['Seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 'finalizar', 'chao', 'bye', 'adios', 'ya pude', 'Muchas Gracias','sayonara'];
     if (endPhrases.some(phrase => lowerMsg.includes(phrase))) {
         showSurveyPrompt();
         return true;
