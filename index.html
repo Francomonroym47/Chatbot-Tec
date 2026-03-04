@@ -718,7 +718,7 @@
             if (modal) modal.style.display = 'none';
             clearInterval(surveyTimerInterval);
             clearTimeout(surveyTimeout);
-            refrescarChat();
+            window.location.reload();
         }
 
         // ==================== SÍNTESIS DE VOZ ====================
@@ -808,10 +808,12 @@
 
         // ==================== FUNCIONES DEL CHAT ====================
         function convertirEnlaces(texto) {
-            if (!texto) return "";
-            texto = texto.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>');
-            texto = texto.replace(/\b(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>');
-            return texto;
+        if (!texto) return "";
+        // Convertir [texto](url) a enlaces HTML
+        return texto.replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#4DA3FF; text-decoration:underline;">$1</a>'
+        );
         }
 
         function agregarMensajeUsuario(msg) {
@@ -904,7 +906,7 @@
             const endPhrases = [
                 'seria todo', 'acabar', 'terminar', 'eso es todo', 'terminé', 
                 'finalizar', 'chao', 'bye', 'adios', 'ya pude', 'muchas gracias',
-                'sayonara', 'gracias', 'me voy', 'hasta luego'
+                'sayonara', 'gracias', 'me voy', 'hasta luego', 'muchisimas gracias'
             ];
             if (endPhrases.some(phrase => lowerMsg.includes(phrase))) {
                 showSurveyPrompt();
